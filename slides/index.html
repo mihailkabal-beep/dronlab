@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>БпЛА: будова, програмні компоненти, навігація та планування місій</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400..800&family=IBM+Plex+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#05090D;overflow:hidden}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0}
+#stage>section{position:absolute;inset:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden;display:none !important}
+#stage>section.on{display:flex !important}
+#stage h1,#stage h2,#stage h3,#stage p{margin:0}
+#stage aside{display:none}
+#stage table{width:100%;border-collapse:collapse}
+#stage th{text-align:left;font-weight:600;padding:.35em .6em;border-bottom:2px solid rgba(140,150,160,.45)}
+#stage td{text-align:left;padding:.35em .6em;border-bottom:1px solid rgba(140,150,160,.3)}
+#stage .fragment{opacity:1}
+#ui{position:fixed;right:14px;bottom:12px;font:13px/1 system-ui,sans-serif;color:#9FB3C1;display:flex;gap:8px;align-items:center;z-index:5}
+#ui button{background:#132433;border:1px solid #26405A;color:#EEF1EA;border-radius:8px;padding:7px 11px;cursor:pointer}
+#notes{position:fixed;left:0;right:0;bottom:0;max-height:40vh;overflow:auto;background:rgba(8,18,26,.96);color:#EEF1EA;font:16px/1.5 system-ui,sans-serif;padding:16px 22px 56px;display:none;z-index:4;border-top:2px solid #FF6B2C}
+</style>
+<style>:root {
+  --ink: #0E1A24;
+  --ink2: #15283A;
+  --paper: #EEF1EA;
+  --paper2: #E2E7DD;
+  --sig: #FF6B2C;
+  --sig-dk: #B93D0A;
+  --dim: #9FB3C1;
+  --dim-dk: #4A5866;
+  --line: #2A4257;
+}
+section {
+  counter-increment: page;
+  padding: 128px 128px 160px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: 'IBM Plex Sans', Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+section.light { background: var(--paper); color: var(--ink); }
+section.accent { background: var(--sig); color: var(--ink); }
+section.mid { background: var(--ink2); }
+
+h1 { font-family: 'Unbounded', Verdana, sans-serif; font-size: 120px; font-weight: 700; line-height: 1.02; letter-spacing: -2px; }
+h2 { font-family: 'Unbounded', Verdana, sans-serif; font-size: 64px; font-weight: 600; line-height: 1.1; letter-spacing: -1px; }
+h3 { font-family: 'Unbounded', Verdana, sans-serif; font-size: 32px; font-weight: 600; line-height: 1.2; }
+p { font-size: 32px; line-height: 1.4; }
+.small { font-size: 24px; line-height: 1.4; }
+.dim { color: var(--dim); }
+.light .dim { color: var(--dim-dk); }
+
+.eyebrow { font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 24px; letter-spacing: 4px; color: var(--sig); font-weight: 600; }
+.light .eyebrow { color: var(--sig-dk); }
+.accent .eyebrow { color: var(--ink); }
+.mono { font-family: 'JetBrains Mono', 'Courier New', monospace; }
+
+.head { display: flex; flex-direction: column; gap: 16px; }
+
+.foot { position: absolute; left: 128px; bottom: 64px; width: 1664px; display: flex; justify-content: space-between; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 24px; color: var(--dim); }
+.light .foot { color: var(--dim-dk); }
+.accent .foot { color: var(--ink); }
+.pg::before { content: counter(page); }
+
+/* cards */
+.row { display: flex; gap: 32px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px 48px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 32px; }
+.card { display: flex; flex-direction: column; gap: 16px; padding: 40px; border-radius: 20px; background: var(--ink2); border: 2px solid var(--line); flex: 1; }
+.light .card { background: #F8F9F5; border: 2px solid #CDD5C8; }
+.card .num { font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 24px; color: var(--sig); font-weight: 600; }
+.light .card .num { color: var(--sig-dk); }
+.card .txt { font-size: 24px; line-height: 1.45; color: var(--dim); }
+.light .card .txt { color: var(--dim-dk); }
+
+.item { display: flex; flex-direction: column; gap: 8px; border-top: 2px solid var(--line); padding-top: 20px; }
+.light .item { border-top: 2px solid #CDD5C8; }
+.item .t { font-size: 28px; font-weight: 600; }
+.item .d { font-size: 24px; line-height: 1.4; color: var(--dim); }
+.light .item .d { color: var(--dim-dk); }
+.item .n { color: var(--sig); font-family: 'JetBrains Mono', 'Courier New', monospace; }
+.light .item .n { color: var(--sig-dk); }
+
+.pin { position: absolute; width: 44px; height: 44px; border-radius: 22px; background: var(--sig); color: var(--ink); font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 24px; font-weight: 600; text-align: center; line-height: 44px; }
+
+.big { font-family: 'Unbounded', Verdana, sans-serif; font-size: 200px; font-weight: 700; line-height: 1; color: var(--sig); letter-spacing: -6px; }
+
+.code { background: #08121A; border: 2px solid var(--line); border-radius: 20px; padding: 40px 48px; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 28px; line-height: 1.55; color: #D9E4EC; }
+.code .c { color: #6F8A9C; }
+.code .k { color: var(--sig); }
+.code .f { color: #8FD3C1; }
+
+.tag { font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 24px; padding: 8px 18px; border-radius: 999px; border: 2px solid var(--sig); color: var(--sig); }
+
+table { font-size: 26px; }
+
+/* motion */
+.rise { animation: rise 600ms cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--i, 0) * 110ms); }
+@keyframes rise { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
+.fade { animation: fadein 700ms ease both; animation-delay: calc(var(--i, 0) * 110ms); }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+.fragment { opacity: 0.15; transition: opacity 300ms ease; }
+.fragment.visible { opacity: 1; }
+</style></head><body>
+<div id="stage">
+<section id="cover" data-transition="fade">
+<svg aria-label="" width="1920" height="1080" viewBox="0 0 1920 1080" style="position:absolute;left:0;top:0;width:1920px;height:1080px"><defs><pattern id="g" width="80" height="80" patternUnits="userSpaceOnUse"><path d="M80 0 L0 0 0 80" fill="none" stroke="#17293A" stroke-width="2"/></pattern></defs><rect width="1920" height="1080" fill="#0E1A24"/><rect width="1920" height="1080" fill="url(#g)"/><circle cx="1460" cy="540" r="430" fill="none" stroke="#1F3549" stroke-width="2"/><circle cx="1460" cy="540" r="300" fill="none" stroke="#1F3549" stroke-width="2" stroke-dasharray="4 12"/><path d="M1460 60 L1460 1020 M980 540 L1900 540" stroke="#1F3549" stroke-width="2"/></svg>
+<div class="fade" style="position:absolute;left:1110px;top:190px;width:700px;height:700px">
+<svg aria-label="Схема квадрокоптера, вигляд згори" width="700" height="700" viewBox="0 0 600 600" style="width:700px;height:700px"><path d="M300 300 L150 150 M300 300 L450 150 M300 300 L150 450 M300 300 L450 450" stroke="#EEF1EA" stroke-width="14" stroke-linecap="round"/><g fill="none" stroke="#FF6B2C" stroke-width="3" stroke-dasharray="6 10"><circle cx="150" cy="150" r="105"/><circle cx="450" cy="150" r="105"/><circle cx="150" cy="450" r="105"/><circle cx="450" cy="450" r="105"/></g><g stroke="#9FB3C1" stroke-width="10" stroke-linecap="round"><path d="M70 120 L230 180"/><path d="M370 180 L530 120"/><path d="M70 480 L230 420"/><path d="M370 420 L530 480"/></g><g fill="#15283A" stroke="#EEF1EA" stroke-width="6"><circle cx="150" cy="150" r="28"/><circle cx="450" cy="150" r="28"/><circle cx="150" cy="450" r="28"/><circle cx="450" cy="450" r="28"/></g><rect x="255" y="210" width="90" height="170" rx="22" fill="#15283A" stroke="#EEF1EA" stroke-width="6"/><rect x="280" y="188" width="40" height="26" rx="6" fill="#FF6B2C"/><rect x="275" y="255" width="50" height="50" rx="6" fill="none" stroke="#8FD3C1" stroke-width="4"/><rect x="268" y="320" width="64" height="40" rx="6" fill="#3A2416" stroke="#FF6B2C" stroke-width="3"/><path d="M300 380 L300 404" stroke="#EEF1EA" stroke-width="6"/><circle cx="300" cy="420" r="17" fill="#15283A" stroke="#EEF1EA" stroke-width="5"/></svg>
+</div>
+<p class="eyebrow rise" style="--i:0">ОСНОВИ НАЦІОНАЛЬНОГО СПРОТИВУ · ПРАКТИКУМ</p>
+<h1 class="rise" style="--i:1;width:960px;font-size:104px">Безпілотник зсередини</h1>
+<p class="dim rise" style="--i:2;width:880px">Будова, програмні компоненти, навігація та планування місій БпЛА</p>
+<div class="row rise" style="--i:3;gap:16px">
+<p class="tag">залізо</p><p class="tag">код</p><p class="tag">навігація</p><p class="tag">місія</p>
+</div>
+<div class="foot"><p class="small">БпЛА / 2026</p><p class="small">бриф 00</p></div>
+<aside>Відкрийте з питання до групи: хто вже тримав пульт дрона? А хто писав для нього код? Сьогодні мета — щоб кожен зміг зробити друге. Наприкінці пари буде тренажер, де дрон виконує саме ваш код.</aside>
+</section>
+<section id="plan" class="light">
+<div class="head"><p class="eyebrow">ПЛАН ПОЛЬОТУ</p><h2>Чотири модулі, один дрон</h2></div>
+<div class="row" style="flex:1">
+<div class="card rise" style="--i:0"><p class="num">01</p><h3>Будова</h3><p class="txt">Рама, мотори, регулятори, батарея. Як чотири гвинти дають політ і поворот.</p></div>
+<div class="card rise" style="--i:1"><p class="num">02</p><h3>Програмні компоненти</h3><p class="txt">Прошивка, оцінка стану, PID-регулятори, режими, наземна станція.</p></div>
+<div class="card rise" style="--i:2"><p class="num">03</p><h3>Навігація</h3><p class="txt">Датчики, злиття даних, що робити, коли GNSS глушать або підміняють.</p></div>
+<div class="card rise" style="--i:3"><p class="num">04</p><h3>Планування місій</h3><p class="txt">Маршрути, патерни зйомки, резерв батареї та аварійні сценарії.</p></div>
+</div>
+<p class="small dim">Фінал заняття: ви пишете програму, і дрон у симуляторі виконує місію.</p>
+<div class="foot"><p class="small">БпЛА / план</p><p class="small pg"></p></div>
+<aside>Наголосіть, що модулі складаються в одну систему: без розуміння будови не зрозуміти PID, без навігації неможливо спланувати місію.</aside>
+</section>
+<section id="flow" class="light">
+<div class="head"><p class="eyebrow">ХІД ЗАНЯТТЯ</p><h2>80 хвилин: від заліза до власної програми</h2></div>
+<div class="row" style="gap:24px;flex:1">
+<div class="card rise" style="--i:0"><p class="num">0–10 ХВ</p><h3>Вступ</h3><p class="txt">Навіщо дрони країні. Цивільна служба і бойові класи.</p></div>
+<div class="card rise" style="--i:1"><p class="num">10–40 ХВ</p><h3>Теорія</h3><p class="txt">Будова, ПЗ, навігація, планування місій.</p></div>
+<div class="card rise" style="--i:2"><p class="num">40–70 ХВ</p><h3>ДронЛаб</h3><p class="txt">У парах: місії коду, PID, ігри «Збери дрон» і «Розпізнай».</p></div>
+<div class="card rise" style="--i:3"><p class="num">70–80 ХВ</p><h3>Підсумок</h3><p class="txt">Бліц, звіт пілота, рефлексія.</p></div>
+</div>
+<p class="small dim">Оцінювання: зірки місій, PID-випробування та бали ігор складаються в рейтинг пілота.</p>
+<div class="foot"><p class="small">БпЛА / хід заняття</p><p class="small pg"></p></div>
+<aside>Перед парою поділіться посиланням на ДронЛаб зі студентами (кнопка Share на сторінці застосунку). Кожен вводить позивний у шапці. Наприкінці студенти натискають «Звіт» і надсилають текст викладачеві.</aside>
+</section>
+<section id="statement" class="accent" style="justify-content:center">
+<p class="eyebrow rise" style="--i:0">ГОЛОВНА ДУМКА</p>
+<h1 class="rise" style="--i:1;width:1500px">Дрон — це комп’ютер, що літає.</h1>
+<p class="rise" style="--i:2;width:1200px;font-size:44px;line-height:1.3">Залізо тримає його в повітрі. Програма вирішує, куди і як летіти.</p>
+<div class="foot"><p class="small">БпЛА / ідея</p><p class="small pg"></p></div>
+<aside>Без програми квадрокоптер не простоїть у повітрі й секунди: він аеродинамічно нестійкий. Стабільність — це заслуга коду, що сотні разів на секунду коригує оберти моторів.</aside>
+</section>
+<section id="nsr-why" class="mid">
+<div class="head"><p class="eyebrow">ОСНОВИ НАЦІОНАЛЬНОГО СПРОТИВУ</p><h2>Дрони — це про стійкість країни</h2></div>
+<div class="row" style="gap:96px;align-items:center;flex:1">
+<div style="display:flex;flex-direction:column;gap:16px;width:680px;flex:none">
+<p class="big rise" style="--i:0;font-size:150px">138 000</p>
+<p class="rise" style="--i:1;font-size:44px;font-family:'Unbounded', Verdana, sans-serif;font-weight:600">км² території</p>
+<p class="dim rise" style="--i:2">потенційно забруднені мінами та вибухонебезпечними предметами. Обстежувати їх без ризику для людей допомагають безпілотники.</p>
+<p class="small dim rise" style="--i:3">Джерело: ДСНС, ПРООН в Україні</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:28px;flex:1">
+<div class="item rise" style="--i:2"><p class="t">Цивільний захист</p><p class="d">Рятувальники шукають людей під завалами, виявляють вибухонебезпечні предмети, оцінюють руйнування.</p></div>
+<div class="item rise" style="--i:3"><p class="t">Технологічна незалежність</p><p class="d">Країна, що сама проєктує і програмує дрони, менше залежить від чужих рішень і постачань.</p></div>
+<div class="item rise" style="--i:4"><p class="t">Ваш внесок</p><p class="d">Інженер, програміст, оператор, аналітик даних — фахи, потрібні і для оборони, і для відбудови.</p></div>
+</div>
+</div>
+<div class="foot"><p class="small">БпЛА / національний спротив</p><p class="small pg"></p></div>
+<aside>Спротив — це не лише фронт. Це здатність громади захистити людей, відновити територію і мати власні технології. Запитайте: хто з вас бачив роботу ДСНС чи саперів у своїй громаді?</aside>
+</section>
+<section id="nsr-service" class="light">
+<div class="head"><p class="eyebrow">ОСНОВИ НАЦІОНАЛЬНОГО СПРОТИВУ</p><h2>Дрони на службі громади</h2></div>
+<div class="row" style="gap:28px;flex:1">
+<div class="card rise" style="--i:0"><p class="num">ПОШУК</p><h3>Люди під завалами</h3><p class="txt">Камера й тепловізор допомагають рятувальникам швидко оглянути зруйновану будівлю.</p><p class="tag" style="align-self:flex-start;border-color:#B93D0A;color:#B93D0A">тренажер: місія 08</p></div>
+<div class="card rise" style="--i:1"><p class="num">РОЗМІНУВАННЯ</p><h3>Карта для саперів</h3><p class="txt">Зйомка поля з повітря показує, де обстежувати насамперед, і не наражає людей на ризик.</p><p class="tag" style="align-self:flex-start;border-color:#B93D0A;color:#B93D0A">тренажер: місія 07</p></div>
+<div class="card rise" style="--i:2"><p class="num">ОЦІНКА</p><h3>Руйнування й пожежі</h3><p class="txt">Огляд згори дає штабу повну картину за хвилини, а не години.</p><p class="tag" style="align-self:flex-start;border-color:#B93D0A;color:#B93D0A">тренажер: місія 05</p></div>
+<div class="card rise" style="--i:3"><p class="num">ЛОГІСТИКА</p><h3>Ліки й зв’язок</h3><p class="txt">Доставка невеликих вантажів туди, куди важко дістатися автомобілем.</p><p class="tag" style="align-self:flex-start;border-color:#B93D0A;color:#B93D0A">тренажер: місія 02</p></div>
+</div>
+<div class="foot"><p class="small">БпЛА / служба громаді</p><p class="small pg"></p></div>
+<aside>За повідомленнями Суспільного, рятувальники Донеччини регулярно тренуються керувати БпЛА: шукають людей у зруйнованих будівлях, виявляють вибухонебезпечні предмети, оцінюють руйнування. Кожна картка відповідає місії в тренажері.</aside>
+</section>
+<section id="combat-classes">
+<div class="head"><p class="eyebrow">БОЙОВІ БПЛА</p><h2>Шість класів бойових дронів</h2></div>
+<table style="font-size:26px;color:#EEF1EA">
+<tr><th style="width:24%">Клас</th><th style="width:42%">Як працює</th><th style="width:34%">Приклади</th></tr>
+<tr><td style="color:#FF6B2C">Розвідувальні</td><td>Камера й тепловізор: спостереження, коригування вогню</td><td>Leleka-100, «Орлан-10», дрони класу Mavic</td></tr>
+<tr><td style="color:#FF6B2C">Ударні FPV</td><td>Оператор бачить «очима» дрона, малі й масові</td><td>Сотні українських моделей</td></tr>
+<tr><td style="color:#FF6B2C">Баражуючі боєприпаси</td><td>Кружляють над районом, вибирають ціль</td><td>Warmate, Switchblade, «Ланцет»</td></tr>
+<tr><td style="color:#FF6B2C">Важкі мультикоптери</td><td>Великі гекса- й октокоптери, працюють уночі</td><td>«Вампір», «Баба-Яга»</td></tr>
+<tr><td style="color:#FF6B2C">Далекобійні ударні</td><td>Літаки на сотні й тисячі кілометрів</td><td>«Лютий», «Шахед»</td></tr>
+<tr><td style="color:#FF6B2C">Морські</td><td>Надводні катери без екіпажу</td><td>Magura, Sea Baby</td></tr>
+</table>
+<div class="foot"><p class="small">БпЛА / бойові класи</p><p class="small pg"></p></div>
+<aside>Наголосіть: усі ці дрони побудовані з тих самих вузлів, що й на слайді «Анатомія». Різниця — у задачі, дальності та корисному навантаженні. Засоби протидії і РЕБ розглядаємо на наступній темі.</aside>
+</section>
+<section id="combat-vs-civil" class="light">
+<div class="head"><p class="eyebrow">БОЙОВІ БПЛА</p><h2>Та сама будова, інші вимоги</h2></div>
+<table style="font-size:26px;color:#0E1A24">
+<tr><th style="width:24%">Що порівнюємо</th><th style="width:38%">Цивільний дрон</th><th style="width:38%">Бойовий дрон</th></tr>
+<tr><td style="color:#B93D0A">Будова</td><td>Рама, мотори, ESC, контролер</td><td>Те саме, часто з простіших і дешевших деталей</td></tr>
+<tr><td style="color:#B93D0A">Ціна й кількість</td><td>Довговічний, один на роки</td><td>Масовий, часто одноразовий</td></tr>
+<tr><td style="color:#B93D0A">Зв’язок</td><td>Стандартні радіоканали</td><td>Захищені канали, оптоволокно</td></tr>
+<tr><td style="color:#B93D0A">Навігація</td><td>Покладається на GNSS</td><td>Має працювати і без супутників</td></tr>
+<tr><td style="color:#B93D0A">Програмне забезпечення</td><td>Готові режими і місії</td><td>Машинний зір, автономність</td></tr>
+</table>
+<p style="font-size:28px">Висновок: <b style="color:#B93D0A">логіка ПЗ однакова</b>, тому програмування дронів — стратегічна навичка для країни.</p>
+<div class="foot"><p class="small">БпЛА / порівняння</p><p class="small pg"></p></div>
+<aside>Рядок «Зв’язок» — місток до наступної теми про радіоелектронну боротьбу і протидію. Тут лише називаємо, деталі — наступного разу.</aside>
+</section>
+<section id="sbs" class="mid">
+<div class="head"><p class="eyebrow">БОЙОВІ БПЛА</p><h2>Сили безпілотних систем</h2></div>
+<div class="row" style="gap:96px;align-items:center;flex:1">
+<div style="display:flex;flex-direction:column;gap:16px;width:680px;flex:none">
+<p class="big rise" style="--i:0;font-size:160px">105 200</p>
+<p class="dim rise" style="--i:1">цілей уразили безпілотники ЗСУ лише в лютому 2026 року. Чверть — підрозділи СБС.</p>
+<p class="small dim rise" style="--i:2">Джерело: Головнокомандувач ЗСУ О. Сирський</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:28px;flex:1">
+<div class="item rise" style="--i:2"><p class="t">Окремий рід сил ЗСУ</p><p class="d">Україна першою у світі виокремила безпілотні системи в самостійний рід сил.</p></div>
+<div class="item rise" style="--i:3"><p class="t">11 червня — День СБС</p><p class="d">Уперше відзначено в 2026 році, свято встановлене указом Президента.</p></div>
+<div class="item rise" style="--i:4"><p class="t">Потрібні фахівці</p><p class="d">Оператори, інженери, програмісти, техніки, аналітики. Усе, з чого ми почали сьогодні.</p></div>
+</div>
+</div>
+<div class="foot"><p class="small">БпЛА / СБС</p><p class="small pg"></p></div>
+<aside>День СБС установлено указом Президента № 485/2026 від 10 червня 2026 року. Запитайте студентів: які професії зі слайда їм ближчі?</aside>
+</section>
+<section id="types">
+<div class="head"><p class="eyebrow">01 · БУДОВА</p><h2>Чотири схеми безпілотників</h2></div>
+<table style="font-size:28px;color:#EEF1EA">
+<tr><th style="width:22%">Схема</th><th style="width:26%">Сильні сторони</th><th style="width:26%">Обмеження</th><th style="width:26%">Типові задачі</th></tr>
+<tr><td style="color:#FF6B2C">Мультиротор</td><td>Зависає, злітає з місця, простий</td><td>Короткий політ, 15–40 хв</td><td>Огляд, зйомка, доставка поруч</td></tr>
+<tr><td style="color:#FF6B2C">Літак</td><td>Довгий і швидкий політ</td><td>Потрібна злітна смуга або катапульта</td><td>Картографування великих площ</td></tr>
+<tr><td style="color:#FF6B2C">VTOL-гібрид</td><td>Злітає вертикально, летить як літак</td><td>Складна конструкція й налаштування</td><td>Довгі маршрути без аеродрому</td></tr>
+<tr><td style="color:#FF6B2C">Гелікоптер</td><td>Великий корисний вантаж</td><td>Складна механіка, обслуговування</td><td>Обприскування, вантажі</td></tr>
+</table>
+<p class="small dim">Далі розбираємо мультиротор: на ньому найлегше побачити всі системи.</p>
+<div class="foot"><p class="small">БпЛА / типи</p><p class="small pg"></p></div>
+<aside>Запитайте: який тип обрали б для пошуку людини в лісі на площі 10 км²? (Літак або VTOL — дальність.) А для огляду даху? (Мультиротор — зависання.)</aside>
+</section>
+<section id="anatomy" class="light">
+<div class="head"><p class="eyebrow">01 · БУДОВА</p><h2>Анатомія квадрокоптера</h2></div>
+<div class="row" style="gap:64px;align-items:flex-start">
+<div class="fade" style="position:relative;width:640px;height:640px;flex:none">
+<svg aria-label="Схема квадрокоптера з пронумерованими вузлами" width="640" height="640" viewBox="0 0 600 600" style="position:absolute;left:0;top:0;width:640px;height:640px"><rect width="600" height="600" rx="24" fill="#0E1A24"/><path d="M300 300 L150 150 M300 300 L450 150 M300 300 L150 450 M300 300 L450 450" stroke="#EEF1EA" stroke-width="14" stroke-linecap="round"/><g fill="none" stroke="#FF6B2C" stroke-width="3" stroke-dasharray="6 10"><circle cx="150" cy="150" r="105"/><circle cx="450" cy="150" r="105"/><circle cx="150" cy="450" r="105"/><circle cx="450" cy="450" r="105"/></g><g stroke="#9FB3C1" stroke-width="10" stroke-linecap="round"><path d="M70 120 L230 180"/><path d="M370 180 L530 120"/><path d="M70 480 L230 420"/><path d="M370 420 L530 480"/></g><g fill="#15283A" stroke="#EEF1EA" stroke-width="6"><circle cx="150" cy="150" r="28"/><circle cx="450" cy="150" r="28"/><circle cx="150" cy="450" r="28"/><circle cx="450" cy="450" r="28"/></g><rect x="384" y="384" width="26" height="18" rx="3" fill="#8FD3C1" transform="rotate(45 397 393)"/><rect x="255" y="210" width="90" height="170" rx="22" fill="#15283A" stroke="#EEF1EA" stroke-width="6"/><rect x="280" y="188" width="40" height="26" rx="6" fill="#FF6B2C"/><rect x="275" y="255" width="50" height="50" rx="6" fill="none" stroke="#8FD3C1" stroke-width="4"/><rect x="268" y="320" width="64" height="40" rx="6" fill="#3A2416" stroke="#FF6B2C" stroke-width="3"/><path d="M300 380 L300 404 M255 300 L232 300 M345 300 L368 300" stroke="#EEF1EA" stroke-width="6"/><circle cx="300" cy="420" r="17" fill="#15283A" stroke="#EEF1EA" stroke-width="5"/></svg>
+<p class="pin" style="left:218px;top:218px">1</p>
+<p class="pin" style="left:138px;top:138px">2</p>
+<p class="pin" style="left:479px;top:62px">3</p>
+<p class="pin" style="left:400px;top:400px">4</p>
+<p class="pin" style="left:298px;top:276px">5</p>
+<p class="pin" style="left:298px;top:340px">6</p>
+<p class="pin" style="left:298px;top:426px">7</p>
+<p class="pin" style="left:218px;top:298px">8</p>
+<p class="pin" style="left:378px;top:298px">9</p>
+<p class="pin" style="left:298px;top:186px">10</p>
+</div>
+<div class="grid2" style="flex:1;gap:20px 40px">
+<div class="item"><p class="t"><span class="n">1 </span>Рама</p><p class="d">Тримає все разом, гасить вібрації.</p></div>
+<div class="item"><p class="t"><span class="n">6 </span>Батарея LiPo</p><p class="d">Енергія. Найважча частина.</p></div>
+<div class="item"><p class="t"><span class="n">2 </span>Мотори BLDC</p><p class="d">Безщіткові, тисячі обертів/хв.</p></div>
+<div class="item"><p class="t"><span class="n">7 </span>GNSS і компас</p><p class="d">Де дрон і куди дивиться.</p></div>
+<div class="item"><p class="t"><span class="n">3 </span>Пропелери</p><p class="d">Пари крутяться в різні боки.</p></div>
+<div class="item"><p class="t"><span class="n">8 </span>Приймач RC</p><p class="d">Команди з пульта пілота.</p></div>
+<div class="item"><p class="t"><span class="n">4 </span>Регулятори ESC</p><p class="d">Команда → струм мотора.</p></div>
+<div class="item"><p class="t"><span class="n">9 </span>Телеметрія</p><p class="d">Зв’язок із наземною станцією.</p></div>
+<div class="item"><p class="t"><span class="n">5 </span>Польотний контролер</p><p class="d">Мозок: датчики й автопілот.</p></div>
+<div class="item"><p class="t"><span class="n">10 </span>Камера</p><p class="d">Відео, фото, тепловізор.</p></div>
+</div>
+</div>
+<div class="foot"><p class="small">БпЛА / анатомія</p><p class="small pg"></p></div>
+<aside>У застосунку є гра «Збери дрон» — студенти розкладають ці 10 вузлів по місцях. Можна запустити її одразу після цього слайда.</aside>
+</section>
+<section id="physics">
+<div class="head"><p class="eyebrow">01 · БУДОВА</p><h2>Як він керується без керма</h2></div>
+<div class="row" style="gap:80px;align-items:center;flex:1">
+<div class="fade" style="width:560px;height:560px;flex:none">
+<svg aria-label="Напрям обертання гвинтів: діагональні пари обертаються однаково" width="560" height="560" viewBox="0 0 600 600" style="width:560px;height:560px"><path d="M300 300 L150 150 M300 300 L450 150 M300 300 L150 450 M300 300 L450 450" stroke="#2A4257" stroke-width="14" stroke-linecap="round"/><g fill="none" stroke-width="10" stroke-linecap="round"><path d="M80 150 A70 70 0 0 1 220 150" stroke="#FF6B2C"/><path d="M520 150 A70 70 0 0 0 380 150" stroke="#8FD3C1"/><path d="M80 450 A70 70 0 0 0 220 450" stroke="#8FD3C1"/><path d="M520 450 A70 70 0 0 1 380 450" stroke="#FF6B2C"/></g><g fill="#FF6B2C"><path d="M220 150 L204 128 L236 128 Z"/><path d="M380 450 L364 472 L396 472 Z"/></g><g fill="#8FD3C1"><path d="M380 150 L364 128 L396 128 Z"/><path d="M220 450 L204 472 L236 472 Z"/></g><g fill="#15283A" stroke="#EEF1EA" stroke-width="6"><circle cx="150" cy="150" r="30"/><circle cx="450" cy="150" r="30"/><circle cx="150" cy="450" r="30"/><circle cx="450" cy="450" r="30"/></g><rect x="255" y="230" width="90" height="140" rx="22" fill="#15283A" stroke="#EEF1EA" stroke-width="6"/><path d="M300 200 L280 230 L320 230 Z" fill="#EEF1EA"/></svg>
+</div>
+<div style="display:flex;flex-direction:column;gap:28px;flex:1">
+<div class="item rise" style="--i:0"><p class="t"><span class="n">ВИСОТА </span>усі мотори разом</p><p class="d">Більше обертів — більше тяги — дрон іде вгору.</p></div>
+<div class="item rise" style="--i:1"><p class="t"><span class="n">КРЕН </span>лівий борт проти правого</p><p class="d">Праві мотори сильніші — дрон нахиляється й зміщується вліво.</p></div>
+<div class="item rise" style="--i:2"><p class="t"><span class="n">ТАНГАЖ </span>ніс проти хвоста</p><p class="d">Задні мотори сильніші — ніс опускається, дрон летить уперед.</p></div>
+<div class="item rise" style="--i:3"><p class="t"><span class="n">РИСКАННЯ </span>одна діагональ проти іншої</p><p class="d">Помаранчеві й бірюзові пари крутяться в різні боки. Розбалансуй їх — і корпус повернеться.</p></div>
+</div>
+</div>
+<div class="foot"><p class="small">БпЛА / керування</p><p class="small pg"></p></div>
+<aside>Покажіть рукою: якщо всі гвинти крутилися б в один бік, корпус закрутило б у протилежний (реактивний момент). Тому пари обертаються протилежно, і різниця між ними дає поворот.</aside>
+</section>
+<section id="power" class="mid">
+<div class="head"><p class="eyebrow">01 · БУДОВА</p><h2>Скільки він протримається</h2></div>
+<div class="row" style="gap:96px;align-items:center;flex:1">
+<div style="display:flex;flex-direction:column;gap:16px;width:640px;flex:none">
+<p class="big rise" style="--i:0">12 хв</p>
+<p class="dim rise" style="--i:1">5000 мА·год, середній струм 20 А</p>
+<div class="code rise" style="--i:2;font-size:32px;padding:32px 40px">t = C × 0,8 / I<br><span class="c">= 5 × 0,8 / 20 = 0,2 год</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:28px;flex:1">
+<div class="item rise" style="--i:2"><p class="t">Чому × 0,8</p><p class="d">LiPo не розряджають до нуля: залишаємо ~20 %, щоб не зіпсувати акумулятор і мати резерв на повернення.</p></div>
+<div class="item rise" style="--i:3"><p class="t">Напруга банки</p><p class="d">4,2 В — повна, 3,7 В — номінал, нижче ~3,5 В під навантаженням — час сідати.</p></div>
+<div class="item rise" style="--i:4"><p class="t">Що з’їдає хвилини</p><p class="d">Вітер, вантаж, холод, агресивні маневри. Плануйте з запасом.</p></div>
+</div>
+</div>
+<div class="foot"><p class="small">БпЛА / енергія</p><p class="small pg"></p></div>
+<aside>Дайте задачу: батарея 3000 мА·год, струм 15 А. Скільки хвилин? (3 × 0,8 / 15 = 0,16 год ≈ 9,6 хв.) Ця ж логіка резерву є в тренажері: дрон із розрядженою батареєю падає.</aside>
+</section>
+<section id="stack">
+<div class="head"><p class="eyebrow">02 · ПРОГРАМНІ КОМПОНЕНТИ</p><h2>Програмний стек автопілота</h2></div>
+<div class="row" style="gap:64px;flex:1">
+<div style="display:flex;flex-direction:column;gap:12px;flex:1">
+<div class="rise" style="--i:5;display:flex;justify-content:space-between;align-items:center;padding:20px 32px;border-radius:14px;background:#FF6B2C;color:#0E1A24"><p style="font-size:28px;font-weight:600">Місія</p><p class="small">маршрут, точки, дії</p></div>
+<div class="rise" style="--i:4;display:flex;justify-content:space-between;align-items:center;padding:20px 32px;border-radius:14px;background:#D9693A;color:#0E1A24"><p style="font-size:28px;font-weight:600">Режими польоту</p><p class="small">Loiter, Auto, RTL</p></div>
+<div class="rise" style="--i:3;display:flex;justify-content:space-between;align-items:center;padding:20px 32px;border-radius:14px;background:#2F5470"><p style="font-size:28px;font-weight:600">Регулятори</p><p class="small">PID кута, швидкості, позиції</p></div>
+<div class="rise" style="--i:2;display:flex;justify-content:space-between;align-items:center;padding:20px 32px;border-radius:14px;background:#25445C"><p style="font-size:28px;font-weight:600">Оцінка стану</p><p class="small">EKF: де я і як рухаюсь</p></div>
+<div class="rise" style="--i:1;display:flex;justify-content:space-between;align-items:center;padding:20px 32px;border-radius:14px;background:#1C3549"><p style="font-size:28px;font-weight:600">Драйвери + ОСРЧ</p><p class="small">ChibiOS, NuttX</p></div>
+<div class="rise" style="--i:0;display:flex;justify-content:space-between;align-items:center;padding:20px 32px;border-radius:14px;background:#15283A;border:2px solid #2A4257"><p style="font-size:28px;font-weight:600">Залізо</p><p class="small">IMU, GNSS, ESC, мотори</p></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:28px;width:560px;flex:none">
+<div class="item"><p class="t">Прошивки</p><p class="d">ArduPilot і PX4 — автопілоти з місіями. Betaflight, INAV — для FPV та простих маршрутів.</p></div>
+<div class="item"><p class="t">Наземна станція</p><p class="d">Mission Planner, QGroundControl: карта, маршрут, телеметрія, налаштування.</p></div>
+<div class="item"><p class="t">Протокол MAVLink</p><p class="d">Мова, якою дрон і станція обмінюються повідомленнями.</p></div>
+</div>
+</div>
+<div class="foot"><p class="small">БпЛА / програмний стек</p><p class="small pg"></p></div>
+<aside>Читайте знизу вгору: кожен шар користується нижчим. Місія каже «лети до точки», режим Auto перетворює це на бажану швидкість, регулятори — на нахил, а нахил — на оберти моторів.</aside>
+</section>
+<section id="loop" class="light">
+<div class="head"><p class="eyebrow">02 · ПРОГРАМНІ КОМПОНЕНТИ</p><h2>Контур керування</h2></div>
+<div style="position:relative;width:1664px;height:420px">
+<svg aria-label="" width="1664" height="420" viewBox="0 0 1664 420" style="position:absolute;left:0;top:0;width:1664px;height:420px"><path d="M1560 210 L1560 370 L104 370 L104 210" fill="none" stroke="#B93D0A" stroke-width="4" stroke-dasharray="10 10"/><path d="M104 214 L92 238 L116 238 Z" fill="#B93D0A"/><g fill="#B93D0A"><path d="M312 150 L292 138 L292 162 Z"/><path d="M640 150 L620 138 L620 162 Z"/><path d="M968 150 L948 138 L948 162 Z"/><path d="M1296 150 L1276 138 L1276 162 Z"/></g><g stroke="#B93D0A" stroke-width="4"><path d="M264 150 L294 150"/><path d="M592 150 L622 150"/><path d="M920 150 L950 150"/><path d="M1248 150 L1278 150"/></g></svg>
+<div class="card rise" style="--i:0;position:absolute;left:0;top:60px;width:264px;padding:28px;box-sizing:border-box"><p class="num">ВИМІР</p><h3>Датчики</h3></div>
+<div class="card rise" style="--i:1;position:absolute;left:328px;top:60px;width:264px;padding:28px;box-sizing:border-box"><p class="num">ОЦІНКА</p><h3>Фільтр EKF</h3></div>
+<div class="card rise" style="--i:2;position:absolute;left:656px;top:60px;width:264px;padding:28px;box-sizing:border-box"><p class="num">РІШЕННЯ</p><h3>PID</h3></div>
+<div class="card rise" style="--i:3;position:absolute;left:984px;top:60px;width:264px;padding:28px;box-sizing:border-box"><p class="num">РОЗПОДІЛ</p><h3>Мікшер</h3></div>
+<div class="card rise" style="--i:4;position:absolute;left:1312px;top:60px;width:352px;padding:28px;box-sizing:border-box"><p class="num">ДІЯ</p><h3>Мотори</h3></div>
+<p class="small dim" style="position:absolute;left:520px;top:384px;width:640px;text-align:center">дрон рухається — датчики бачать зміну</p>
+</div>
+<div class="row" style="gap:48px">
+<p style="flex:1"><b>Сотні–тисячі разів на секунду</b> цикл міряє, порівнює бажане з реальним і виправляє.</p>
+<p class="dim" style="flex:1">Мікшер вирішує, якому мотору скільки: «нахилитись вліво й піднятись» стає чотирма числами.</p>
+</div>
+<div class="foot"><p class="small">БпЛА / контур</p><p class="small pg"></p></div>
+<aside>Аналогія: ви тримаєте рівновагу на одній нозі. Вестибулярний апарат — датчики, мозок — оцінка й рішення, м’язи — мотори. Цикл не зупиняється ні на мить.</aside>
+</section>
+<section id="pid">
+<div class="head"><p class="eyebrow">02 · ПРОГРАМНІ КОМПОНЕНТИ</p><h2>PID: три способи виправити помилку</h2></div>
+<div class="row">
+<div class="card rise" style="--i:0"><p class="big" style="font-size:120px">P</p><h3>Тепер</h3><p class="txt">Чим більша похибка зараз, тим сильніше тисне. Завеликий Kp — розгойдування.</p></div>
+<div class="card rise" style="--i:1"><p class="big" style="font-size:120px">I</p><h3>Минуле</h3><p class="txt">Накопичує стару похибку. Прибирає постійний знос, наприклад від вітру.</p></div>
+<div class="card rise" style="--i:2"><p class="big" style="font-size:120px">D</p><h3>Майбутнє</h3><p class="txt">Дивиться, як швидко похибка змінюється, і гальмує заздалегідь. Гасить коливання.</p></div>
+</div>
+<div class="code rise" style="--i:3;font-size:30px;padding:28px 40px">u = <span class="k">Kp</span>·e + <span class="k">Ki</span>·∑e·dt + <span class="k">Kd</span>·Δe/dt   <span class="c">// e = бажане − реальне</span></div>
+<div class="foot"><p class="small">БпЛА / PID</p><p class="small pg"></p></div>
+<aside>У застосунку є «PID-лабораторія»: студенти рухають повзунки Kp, Ki, Kd і бачать, як дрон набирає висоту — з перерегулюванням, коливанням або плавно. Мета — потрапити в зелену зону.</aside>
+</section>
+<section id="modes" class="light">
+<div class="head"><p class="eyebrow">02 · ПРОГРАМНІ КОМПОНЕНТИ</p><h2>Режими польоту</h2></div>
+<table style="font-size:28px;color:#0E1A24">
+<tr><th style="width:24%">Режим</th><th style="width:40%">Що тримає автопілот</th><th style="width:36%">Коли вмикають</th></tr>
+<tr><td style="color:#B93D0A">Stabilize</td><td>Тільки горизонт</td><td>Ручне пілотування, навчання</td></tr>
+<tr><td style="color:#B93D0A">AltHold</td><td>Горизонт і висоту</td><td>Зйомка, плавний політ</td></tr>
+<tr><td style="color:#B93D0A">Loiter / PosHold</td><td>Висоту і точку над землею</td><td>Зависання на місці</td></tr>
+<tr><td style="color:#B93D0A">Auto</td><td>Виконує маршрут місії сам</td><td>Зйомка площі, обліт</td></tr>
+<tr><td style="color:#B93D0A">RTL</td><td>Повертається додому і сідає</td><td>Втрата зв’язку, мало заряду</td></tr>
+<tr><td style="color:#B93D0A">Land</td><td>Сідає там, де є</td><td>Аварійні ситуації</td></tr>
+</table>
+<p class="small dim">Назви з ArduPilot. У PX4 та інших прошивках — схожі режими з іншими назвами.</p>
+<div class="foot"><p class="small">БпЛА / режими</p><p class="small pg"></p></div>
+<aside>Що більше автоматики в режимі, то більше датчиків йому потрібно. Loiter без GNSS не працює — і це важливий місток до наступного модуля.</aside>
+</section>
+<section id="sensors">
+<div class="head"><p class="eyebrow">03 · НАВІГАЦІЯ</p><h2>Шість органів чуття</h2></div>
+<div class="grid3" style="gap:24px">
+<div class="card rise" style="--i:0;padding:32px"><p class="num">IMU</p><h3>Інерційний блок</h3><p class="txt">Гіроскоп і акселерометр: кути й прискорення, швидко. Але похибка накопичується.</p></div>
+<div class="card rise" style="--i:1;padding:32px"><p class="num">БАРО</p><h3>Барометр</h3><p class="txt">Висота за тиском. Плаває від вітру й погоди.</p></div>
+<div class="card rise" style="--i:2;padding:32px"><p class="num">МАГ</p><h3>Магнітометр</h3><p class="txt">Курс за магнітним полем. Боїться заліза й струмів.</p></div>
+<div class="card rise" style="--i:3;padding:32px"><p class="num">GNSS</p><h3>Супутники</h3><p class="txt">Абсолютні координати. Вразливий до глушіння.</p></div>
+<div class="card rise" style="--i:4;padding:32px"><p class="num">FLOW</p><h3>Оптичний потік</h3><p class="txt">Рух відносно землі з камери. Потрібна текстура й світло.</p></div>
+<div class="card rise" style="--i:5;padding:32px"><p class="num">LIDAR</p><h3>Дальномір</h3><p class="txt">Точна висота над землею, але на малій дальності.</p></div>
+</div>
+<p class="rise" style="--i:6"><b style="color:#FF6B2C">Злиття даних (EKF)</b> зважує всі джерела: що надійніше зараз, тому й більше довіри.</p>
+<div class="foot"><p class="small">БпЛА / датчики</p><p class="small pg"></p></div>
+<aside>Ключова ідея: жоден датчик не ідеальний, але їхні слабкі сторони різні. Фільтр Калмана поєднує швидкий, але дрейфуючий IMU з повільним, але абсолютним GNSS.</aside>
+</section>
+<section id="gnss" class="mid">
+<div class="head"><p class="eyebrow">03 · НАВІГАЦІЯ</p><h2>Коли супутники брешуть</h2></div>
+<div class="row" style="gap:80px;flex:1;align-items:center">
+<div class="fade" style="width:720px;height:520px;flex:none;position:relative">
+<svg aria-label="Справжній маршрут і маршрут, що відпливає без корекції" width="720" height="520" viewBox="0 0 720 520" style="position:absolute;left:0;top:0;width:720px;height:520px"><rect width="720" height="520" rx="20" fill="#0E1A24"/><path d="M60 460 C 200 420, 300 300, 380 260 S 560 120, 660 80" fill="none" stroke="#EEF1EA" stroke-width="6"/><path d="M60 460 C 210 430, 320 330, 420 320 S 600 260, 680 250" fill="none" stroke="#FF6B2C" stroke-width="6" stroke-dasharray="14 12"/><circle cx="60" cy="460" r="12" fill="#EEF1EA"/><circle cx="660" cy="80" r="12" fill="#EEF1EA"/><circle cx="680" cy="250" r="12" fill="#FF6B2C"/></svg>
+<p class="small" style="position:absolute;left:400px;top:40px;width:240px">справжній курс</p>
+<p class="small" style="position:absolute;left:420px;top:330px;width:280px;color:#FF6B2C">без корекції: дрейф</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:28px;flex:1">
+<div class="item"><p class="t">Глушіння</p><p class="d">Шум забиває сигнал — координат немає зовсім.</p></div>
+<div class="item"><p class="t">Підміна (спуфінг)</p><p class="d">Фальшивий сигнал — дрон «впевнено» не там, де є.</p></div>
+<div class="item"><p class="t">Що робить автопілот</p><p class="d">EKF бачить розбіжність, перемикається на інерціальну чи візуальну навігацію, вмикає аварійний сценарій.</p></div>
+</div>
+</div>
+<div class="foot"><p class="small">БпЛА / GNSS</p><p class="small pg"></p></div>
+<aside>Для України це не теорія: радіоелектронна боротьба змінила вимоги до навігації. Тому розробники вчать дрони орієнтуватися за камерою, рельєфом і власним рухом.</aside>
+</section>
+<section id="planning" class="light">
+<div class="head"><p class="eyebrow">04 · ПЛАНУВАННЯ МІСІЙ</p><h2>Вісім кроків до вильоту</h2></div>
+<div class="grid2" style="grid-template-columns:1fr 1fr 1fr 1fr;gap:28px 32px">
+<div class="item rise" style="--i:0"><p class="t"><span class="n">01 </span>Мета</p><p class="d">Що саме має дати політ: фото, пошук, доставка.</p></div>
+<div class="item rise" style="--i:1"><p class="t"><span class="n">02 </span>Карта</p><p class="d">Рельєф, перешкоди, заборонені зони.</p></div>
+<div class="item rise" style="--i:2"><p class="t"><span class="n">03 </span>Маршрут</p><p class="d">Точки, порядок, дії в кожній.</p></div>
+<div class="item rise" style="--i:3"><p class="t"><span class="n">04 </span>Висота й швидкість</p><p class="d">Вище за перешкоди, нижче за обмеження.</p></div>
+<div class="item rise" style="--i:4"><p class="t"><span class="n">05 </span>Енергія</p><p class="d">Довжина маршруту плюс 20–30 % резерву.</p></div>
+<div class="item rise" style="--i:5"><p class="t"><span class="n">06 </span>Аварійні сценарії</p><p class="d">Що робити при втраті зв’язку чи GNSS.</p></div>
+<div class="item rise" style="--i:6"><p class="t"><span class="n">07 </span>Симуляція</p><p class="d">Прогнати місію в SITL до реального польоту.</p></div>
+<div class="item rise" style="--i:7"><p class="t"><span class="n">08 </span>Розбір логів</p><p class="d">Після польоту: що пішло не так і чому.</p></div>
+</div>
+<div class="foot"><p class="small">БпЛА / планування</p><p class="small pg"></p></div>
+<aside>SITL — software in the loop: справжня прошивка працює на комп’ютері з віртуальною фізикою. Наш тренажер — спрощений аналог: спершу перевіряємо програму в симуляції.</aside>
+</section>
+<section id="patterns">
+<div class="head"><p class="eyebrow">04 · ПЛАНУВАННЯ МІСІЙ</p><h2>Чотири патерни маршрутів</h2></div>
+<div class="row" style="gap:28px">
+<div class="card rise" style="--i:0;padding:32px">
+<svg aria-label="Ламаний маршрут через точки" width="320" height="200" viewBox="0 0 320 200" style="width:320px;height:200px"><path d="M30 170 L110 60 L200 130 L290 40" fill="none" stroke="#FF6B2C" stroke-width="5"/><g fill="#0E1A24" stroke="#EEF1EA" stroke-width="4"><circle cx="30" cy="170" r="12"/><circle cx="110" cy="60" r="12"/><circle cx="200" cy="130" r="12"/><circle cx="290" cy="40" r="12"/></g></svg>
+<h3>Точки маршруту</h3><p class="txt">Від точки до точки з діями в кожній. Доставка ліків, обліт постів.</p></div>
+<div class="card rise" style="--i:1;padding:32px">
+<svg aria-label="Зміїстий маршрут для зйомки площі" width="320" height="200" viewBox="0 0 320 200" style="width:320px;height:200px"><rect x="20" y="20" width="280" height="160" fill="none" stroke="#2A4257" stroke-width="3" stroke-dasharray="6 6"/><path d="M40 40 L280 40 L280 80 L40 80 L40 120 L280 120 L280 160 L40 160" fill="none" stroke="#FF6B2C" stroke-width="5"/></svg>
+<h3>«Газонокосарка»</h3><p class="txt">Смуги з перекриттям знімків. Картографування, пошук людей.</p></div>
+<div class="card rise" style="--i:2;padding:32px">
+<svg aria-label="Коло навколо об’єкта" width="320" height="200" viewBox="0 0 320 200" style="width:320px;height:200px"><circle cx="160" cy="100" r="80" fill="none" stroke="#FF6B2C" stroke-width="5"/><rect x="140" y="80" width="40" height="40" fill="#EEF1EA"/></svg>
+<h3>Орбіта</h3><p class="txt">Коло навколо об’єкта, камера в центр. Огляд мостів і веж.</p></div>
+<div class="card rise" style="--i:3;padding:32px">
+<svg aria-label="Маршрут уздовж лінії" width="320" height="200" viewBox="0 0 320 200" style="width:320px;height:200px"><path d="M20 150 C 100 150, 120 50, 200 60 S 280 120, 300 100" fill="none" stroke="#2A4257" stroke-width="22"/><path d="M20 150 C 100 150, 120 50, 200 60 S 280 120, 300 100" fill="none" stroke="#FF6B2C" stroke-width="5"/></svg>
+<h3>Коридор</h3><p class="txt">Уздовж лінії: дорога, річка, ЛЕП, трубопровід.</p></div>
+</div>
+<p class="small dim">У ДронЛабі ви запрограмуєте ці маршрути самі: місії 05, 07, 08 і 09.</p>
+<div class="foot"><p class="small">БпЛА / патерни</p><p class="small pg"></p></div>
+<aside>Перекриття знімків у «газонокосарці» зазвичай 60–80 %, щоб програма могла склеїти ортофотоплан. Відстань між смугами залежить від висоти й кута огляду камери.</aside>
+</section>
+<section id="failsafe" class="light">
+<div class="head"><p class="eyebrow">04 · ПЛАНУВАННЯ МІСІЙ</p><h2>Аварійні сценарії: план Б</h2></div>
+<table style="font-size:28px;color:#0E1A24">
+<tr><th style="width:34%">Подія</th><th style="width:66%">Типова реакція автопілота</th></tr>
+<tr><td>Втрата зв’язку з пультом</td><td>Через кілька секунд — RTL: повернення додому</td></tr>
+<tr><td>Низький заряд</td><td>RTL, а на критичному рівні — посадка на місці</td></tr>
+<tr><td>Вихід за геозону</td><td>Зупинка й повернення в дозволену зону</td></tr>
+<tr><td>Втрата GNSS</td><td>Утримання висоти, перехід у ручний режим або посадка</td></tr>
+<tr><td>Відмова мотора</td><td>Квадро падає; гекса- й октокоптер можуть сісти</td></tr>
+</table>
+<p style="font-size:28px">Аварійні сценарії налаштовують <b style="color:#B93D0A">до</b> зльоту. У повітрі думати вже пізно.</p>
+<div class="foot"><p class="small">БпЛА / failsafe</p><p class="small pg"></p></div>
+<aside>У тренажері рівень 4 перевіряє саме це: програма має сама помітити низький заряд і повернути дрон додому.</aside>
+</section>
+<section id="code">
+<div class="head"><p class="eyebrow">ВІД ТЕОРІЇ ДО КОДУ</p><h2>Місія — це програма</h2></div>
+<div class="row" style="gap:64px;align-items:flex-start">
+<div class="code rise" style="--i:0;width:960px;flex:none"><span class="c">// злетіти й пройти маршрут</span><br><span class="f">takeOff</span>(20);<br><span class="k">for</span> (const p <span class="k">of</span> route) {<br>&#160;&#160;<span class="f">goTo</span>(p.x, p.y);<br>&#160;&#160;<span class="f">photo</span>();<br>&#160;&#160;<span class="k">if</span> (<span class="f">battery</span>() &lt; 30) {<br>&#160;&#160;&#160;&#160;<span class="f">returnHome</span>();<br>&#160;&#160;&#160;&#160;<span class="k">break</span>;<br>&#160;&#160;}<br>}<br><span class="f">land</span>();</div>
+<div style="display:flex;flex-direction:column;gap:28px;flex:1">
+<div class="item rise" style="--i:1"><p class="t">Команди</p><p class="d">takeOff, goTo, land — як пункти місії в Mission Planner.</p></div>
+<div class="item rise" style="--i:2"><p class="t">Цикл</p><p class="d">Один рядок обходить хоч сто точок.</p></div>
+<div class="item rise" style="--i:3"><p class="t">Умова</p><p class="d">Програма реагує на стан дрона — так працює failsafe.</p></div>
+</div>
+</div>
+<div class="foot"><p class="small">БпЛА / код</p><p class="small pg"></p></div>
+<aside>Це саме ті команди, що є в тренажері. Справжні бібліотеки (pymavlink, MAVSDK) мають схожу логіку, лише складніший синтаксис.</aside>
+</section>
+<section id="nsr-rules" class="light">
+<div class="head"><p class="eyebrow">ОСНОВИ НАЦІОНАЛЬНОГО СПРОТИВУ</p><h2>Правила для цивільних під час воєнного стану</h2></div>
+<div class="grid2" style="gap:36px 64px">
+<div class="item rise" style="--i:0"><p class="t"><span class="n">01 </span>Небо закрите</p><p class="d">Повітряний простір закритий з 24.02.2022. Будь-який цивільний політ — лише з дозволом.</p></div>
+<div class="item rise" style="--i:1"><p class="t"><span class="n">02 </span>Не знімай і не публікуй</p><p class="d">Військові об’єкти, роботу ППО, наслідки ударів. Такі кадри допомагають ворогу коригувати атаки.</p></div>
+<div class="item rise" style="--i:2"><p class="t"><span class="n">03 </span>Уламки — не чіпати</p><p class="d">Дрон, що впав, чи його частини можуть вибухнути. Відійдіть, не фотографуйте зблизька, телефонуйте 101 або 102.</p></div>
+<div class="item rise" style="--i:3"><p class="t"><span class="n">04 </span>Вчитися — легально</p><p class="d">Симулятори, гуртки, курси операторів. Перші години польоту — у тренажері, як сьогодні.</p></div>
+</div>
+<p style="font-size:28px">Знання про дрони — це відповідальність: <b style="color:#B93D0A">безпека людей важливіша за ефектне відео</b>.</p>
+<div class="foot"><p class="small">БпЛА / правила</p><p class="small pg"></p></div>
+<aside>Зв’язок із заняттям з мінної безпеки: уламки БпЛА і ракет — такі самі вибухонебезпечні предмети. Правило «не торкатися, відійти, повідомити» діє і тут. Порядок отримання дозволів змінюється, тому актуальні вимоги перевіряйте в офіційних джерелах.</aside>
+</section>
+<section id="practice" class="accent" style="justify-content:center">
+<p class="eyebrow rise" style="--i:0">ПРАКТИКА</p>
+<h1 class="rise" style="--i:1;width:1500px">Ваша черга писати ПЗ для дрона.</h1>
+<div class="row rise" style="--i:2;gap:24px">
+<div style="padding:28px 36px;border-radius:20px;background:#0E1A24;color:#EEF1EA;display:flex;flex-direction:column;gap:8px;flex:1"><p class="mono" style="font-size:24px;color:#FF6B2C">01</p><h3>Код-тренажер</h3><p class="small" style="color:#9FB3C1">9 місій: від зльоту до розвідки</p></div>
+<div style="padding:28px 36px;border-radius:20px;background:#0E1A24;color:#EEF1EA;display:flex;flex-direction:column;gap:8px;flex:1"><p class="mono" style="font-size:24px;color:#FF6B2C">02</p><h3>PID-лабораторія</h3><p class="small" style="color:#9FB3C1">Налаштуйте стабілізацію висоти</p></div>
+<div style="padding:28px 36px;border-radius:20px;background:#0E1A24;color:#EEF1EA;display:flex;flex-direction:column;gap:8px;flex:1"><p class="mono" style="font-size:24px;color:#FF6B2C">03</p><h3>Ігри</h3><p class="small" style="color:#9FB3C1">«Збери дрон», «Розпізнай БпЛА», бліц</p></div>
+</div>
+<div class="foot"><p class="small">БпЛА / практика</p><p class="small pg"></p></div>
+<aside>Поділіть групу на пари: один пише код, другий перевіряє логіку місії. Бали з усіх трьох режимів додаються в загальний рахунок пілота.</aside>
+</section>
+<section id="wrapup">
+<div class="head"><p class="eyebrow">ПІДСУМОК</p><h2>Що ви тепер умієте</h2></div>
+<div class="grid3" style="gap:28px">
+<div class="card rise" style="--i:0"><p class="num">01</p><h3>Пояснити</h3><p class="txt">З чого складається дрон і як чотири гвинти дають політ і поворот.</p></div>
+<div class="card rise" style="--i:1"><p class="num">02</p><h3>Запрограмувати</h3><p class="txt">Місію з циклами, умовами й резервом батареї.</p></div>
+<div class="card rise" style="--i:2"><p class="num">03</p><h3>Відповідально діяти</h3><p class="txt">Знати правила воєнного часу й безпеки поруч із дронами.</p></div>
+</div>
+<div class="row" style="gap:24px;align-items:center">
+<p style="flex:1"><b style="color:#FF6B2C">Рефлексія:</b> яка місія далася найважче і чому?</p>
+<p class="tag">Надішліть звіт з ДронЛабу</p>
+</div>
+<div class="foot"><p class="small">БпЛА / підсумок</p><p class="small pg"></p></div>
+<aside>Наступна тема — протидія БпЛА та радіоелектронна боротьба. Попросіть студентів подумати: як ворог може завадити дрону з сьогоднішнього тренажера?</aside>
+</section>
+
+</div>
+<div id="notes"></div>
+<div id="ui"><button id="pv" aria-label="Попередній">◀</button><span id="ct"></span><button id="nx" aria-label="Наступний">▶</button><button id="nb" title="Нотатки (N)">Нотатки</button><button id="fs" title="Повний екран (F)">⛶</button><a href="../" style="background:#FF6B2C;color:#0E1A24;border-radius:8px;padding:7px 11px;text-decoration:none;font-weight:600">ДронЛаб →</a></div>
+<script>
+const S=[...document.querySelectorAll('#stage>section')];let i=0;
+const st=document.getElementById('stage');
+function fit(){const k=Math.min(innerWidth/1920,innerHeight/1080);st.style.transform='scale('+k+') translate(-50%,-50%)';}
+function go(n){i=Math.max(0,Math.min(S.length-1,n));S.forEach((s,k)=>s.classList.toggle('on',k===i));document.getElementById('ct').textContent=(i+1)+' / '+S.length;const a=S[i].querySelector('aside');document.getElementById('notes').textContent=a?a.textContent:'';try{history.replaceState(null,'','#'+(i+1));}catch(e){}}
+addEventListener('resize',fit);fit();
+const h=parseInt(location.hash.slice(1));go(isNaN(h)?0:h-1);
+addEventListener('keydown',e=>{if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();go(i+1)}else if(['ArrowLeft','PageUp','Backspace'].includes(e.key)){e.preventDefault();go(i-1)}else if(e.key==='Home')go(0);else if(e.key==='End')go(S.length-1);else if(e.key==='f'||e.key==='F')fs();else if(e.key==='n'||e.key==='N')nt();});
+function fs(){if(!document.fullscreenElement)document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{});else document.exitFullscreen();}
+function nt(){const n=document.getElementById('notes');n.style.display=n.style.display==='block'?'none':'block';}
+document.getElementById('pv').onclick=()=>go(i-1);document.getElementById('nx').onclick=()=>go(i+1);document.getElementById('fs').onclick=fs;document.getElementById('nb').onclick=nt;
+let x0=null;addEventListener('touchstart',e=>x0=e.touches[0].clientX,{passive:true});addEventListener('touchend',e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>50)go(i+(dx<0?1:-1));x0=null;});
+st.addEventListener('click',e=>{go(i+(e.clientX>innerWidth/2?1:-1));});
+</script></body></html>

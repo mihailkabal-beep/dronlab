@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ДронЛаб — тренажер і гра з БпЛА · Основи національного спротиву</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --ink:#0E1A24; --ink2:#132433; --ink3:#1A2F42; --line:#26405A; --line2:#33526F;
+  --paper:#EEF1EA; --dim:#9FB3C1; --dim2:#6F8A9C;
+  --sig:#FF6B2C; --sig2:#FF8A55; --teal:#8FD3C1; --red:#FF5A6A; --ok:#7BE0A2; --warn:#F5C451;
+  --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  --disp:'Unbounded',Verdana,sans-serif;
+  --sans:'IBM Plex Sans',system-ui,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--sans);font-size:15px}
+body{background-image:linear-gradient(var(--ink2) 1px,transparent 1px),linear-gradient(90deg,var(--ink2) 1px,transparent 1px);background-size:40px 40px;min-height:100vh}
+button{font-family:inherit;cursor:pointer}
+.mono{font-family:var(--mono)}
+/* header */
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:20px;padding:12px 22px;background:rgba(14,26,36,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:700;font-size:18px;letter-spacing:-.5px;white-space:nowrap}
+.brand b{color:var(--sig)}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav button{background:none;border:1px solid transparent;color:var(--dim);padding:8px 14px;border-radius:999px;font-size:14px;font-weight:500}
+nav button:hover{color:var(--paper);border-color:var(--line)}
+nav button.on{background:var(--sig);color:var(--ink);font-weight:600}
+.hright{margin-left:auto;display:flex;align-items:center;gap:14px}
+.pilot{background:var(--ink2);border:1px solid var(--line);color:var(--paper);border-radius:10px;padding:7px 10px;width:170px;font-family:inherit;font-size:14px}
+.xp{display:flex;flex-direction:column;gap:4px;min-width:170px}
+.xp .r{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--dim)}
+.xp .r b{color:var(--sig);font-weight:600}
+.bar{height:6px;background:var(--ink3);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--sig),var(--sig2));width:0;transition:width .6s}
+.btn{background:var(--ink3);border:1px solid var(--line2);color:var(--paper);padding:9px 16px;border-radius:10px;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{border-color:var(--dim2)}
+.btn.pri{background:var(--sig);color:var(--ink);border-color:var(--sig);font-weight:600}
+.btn.pri:hover{background:var(--sig2)}
+.btn.ghost{background:none}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+main{padding:22px;max-width:1500px;margin:0 auto}
+.view{display:none}.view.on{display:block;animation:vin .35s ease}
+@keyframes vin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:3px;color:var(--sig);font-weight:600;text-transform:uppercase}
+h1,h2,h3{font-family:var(--disp);font-weight:700;letter-spacing:-.5px;margin:0}
+.panel{background:rgba(19,36,51,.92);border:1px solid var(--line);border-radius:16px}
+/* missions */
+.mwrap{display:grid;grid-template-columns:250px minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+.mlist{display:flex;flex-direction:column;gap:8px;position:sticky;top:84px}
+.mitem{display:grid;grid-template-columns:34px 1fr;gap:4px 10px;padding:12px;border-radius:12px;background:rgba(19,36,51,.92);border:1px solid var(--line);text-align:left;color:var(--paper)}
+.mitem:hover{border-color:var(--line2)}
+.mitem.on{border-color:var(--sig);background:#1D2A33}
+.mitem .n{grid-row:span 2;font-family:var(--mono);font-size:20px;font-weight:600;color:var(--sig);align-self:center}
+.mitem .t{font-weight:600;font-size:14px}
+.mitem .s{font-size:12px;color:var(--dim);font-family:var(--mono);letter-spacing:1px}
+.stars{color:var(--warn);letter-spacing:2px}
+.stars .off{color:var(--line2)}
+.brief{padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+.brief h2{font-size:22px}
+.brief p{margin:0;color:var(--dim);line-height:1.5}
+.goals{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.goals li{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.4}
+.goals li::before{content:"";flex:none;width:8px;height:8px;margin-top:6px;border-radius:2px;background:var(--sig)}
+.goals li.b::before{background:var(--warn);border-radius:50%}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:var(--mono);font-size:12px;padding:4px 9px;border-radius:7px;background:var(--ink3);border:1px solid var(--line2);color:var(--teal);cursor:pointer}
+.chip:hover{border-color:var(--teal)}
+.colL{display:flex;flex-direction:column;gap:14px;min-width:0}
+.colR{display:flex;flex-direction:column;gap:14px;min-width:0;position:sticky;top:84px}
+/* editor */
+.ed{position:relative;border-radius:14px;background:#08121A;border:1px solid var(--line);overflow:hidden}
+.edbar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:12px;color:var(--dim2)}
+.edbar .dot{width:9px;height:9px;border-radius:50%;background:var(--line2)}
+.edbar .dot.a{background:var(--sig)}
+.edbody{display:grid;grid-template-columns:44px 1fr;height:360px;overflow:auto}
+.gut{font-family:var(--mono);font-size:14px;line-height:21px;color:var(--dim2);text-align:right;padding:12px 8px 12px 0;user-select:none;border-right:1px solid var(--ink3)}
+.gut div.err{color:var(--red);background:rgba(255,90,106,.15)}
+.code{position:relative;min-height:100%}
+.code pre,.code textarea{margin:0;padding:12px 14px;font-family:var(--mono);font-size:14px;line-height:21px;white-space:pre;tab-size:2;font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0;border:0;outline:0;min-height:100%;width:100%}
+.code pre{position:absolute;inset:0;pointer-events:none;color:#D9E4EC;overflow:visible}
+.code textarea{position:relative;display:block;background:transparent;color:transparent;caret-color:var(--sig);resize:none;overflow:hidden}
+.code textarea::selection{background:rgba(255,107,44,.3);color:transparent}
+.tk-c{color:#5F7A8C;font-style:italic}.tk-k{color:var(--sig)}.tk-f{color:var(--teal)}.tk-n{color:var(--warn)}.tk-s{color:#B8E07B}.tk-g{color:#C9A7FF}
+.edact{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.edact .sp{flex:1}
+.console{font-family:var(--mono);font-size:13px;line-height:1.55;max-height:170px;min-height:90px;overflow:auto;padding:10px 14px;background:#08121A;border:1px solid var(--line);border-radius:14px}
+.console .l{color:var(--dim)}.console .l b{color:var(--dim2);font-weight:400}
+.console .e{color:var(--red)}.console .w{color:var(--warn)}.console .o{color:var(--ok)}.console .u{color:var(--paper)}
+/* map */
+.mapbox{position:relative;padding:12px}
+canvas#map{width:100%;aspect-ratio:1/1;display:block;border-radius:10px;background:#0B1620}
+.hud{position:absolute;top:22px;left:22px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
+.hud div{background:rgba(8,18,26,.85);border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-family:var(--mono);font-size:12px;color:var(--dim)}
+.hud b{color:var(--paper);font-weight:600}
+.hud .lowb b{color:var(--red)}
+.status{position:absolute;top:22px;right:22px;font-family:var(--mono);font-size:12px;padding:5px 10px;border-radius:8px;background:rgba(8,18,26,.85);border:1px solid var(--line);color:var(--dim)}
+.status.fly{color:var(--sig);border-color:var(--sig)}
+canvas#prof{width:100%;height:80px;display:block;margin-top:10px;border-radius:8px;background:#0B1620}
+.play{display:flex;gap:8px;align-items:center;margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--dim)}
+.seg{display:flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.seg button{background:none;border:0;color:var(--dim);padding:6px 10px;font-family:var(--mono);font-size:12px}
+.seg button.on{background:var(--line2);color:var(--paper)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(5,10,15,.7);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modal.on{display:flex}
+.mcard{width:min(560px,100%);max-height:90vh;overflow:auto;padding:28px;display:flex;flex-direction:column;gap:14px;animation:pop .35s cubic-bezier(.2,.8,.2,1.2)}
+@keyframes pop{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
+.mcard h2{font-size:26px}
+.bigstars{font-size:44px;letter-spacing:8px;color:var(--warn)}
+.bigstars .off{color:var(--line2)}
+.blist{display:flex;flex-direction:column;gap:6px;font-size:14px}
+.blist div{display:flex;gap:8px}
+.blist .y{color:var(--ok)}.blist .x{color:var(--dim2)}
+.mrow{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.fail{color:var(--red)}
+textarea.report{width:100%;height:240px;background:#08121A;color:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;font-family:var(--mono);font-size:13px}
+/* PID */
+.pidwrap{display:grid;grid-template-columns:340px minmax(0,1fr) 140px;gap:18px;align-items:start}
+.sl{display:flex;flex-direction:column;gap:6px;padding:12px 0;border-top:1px solid var(--line)}
+.sl .h{display:flex;justify-content:space-between;align-items:baseline}
+.sl .h b{font-family:var(--disp);font-size:22px;color:var(--sig)}
+.sl .h span{font-family:var(--mono);font-size:18px}
+.sl small{color:var(--dim);font-size:12px;line-height:1.4}
+input[type=range]{width:100%;accent-color:var(--sig)}
+.chal{display:flex;flex-direction:column;gap:8px}
+.chal button{text-align:left;background:var(--ink3);border:1px solid var(--line2);color:var(--paper);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:3px}
+.chal button.on{border-color:var(--sig)}
+.chal button .s{font-size:12px;color:var(--dim)}
+.chal button .d{font-family:var(--mono);font-size:11px;color:var(--ok)}
+canvas#pidc{width:100%;aspect-ratio:16/9;display:block;border-radius:10px;background:#0B1620}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.met{background:#0B1620;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.met .k{font-size:11px;color:var(--dim);font-family:var(--mono);letter-spacing:1px}
+.met .v{font-family:var(--disp);font-size:20px;margin-top:4px}
+.met .g{font-size:11px;font-family:var(--mono);color:var(--dim2)}
+.met.ok{border-color:#3E7A58}.met.ok .v{color:var(--ok)}
+.met.bad .v{color:var(--red)}
+.tower{position:relative;height:440px;border-radius:12px;background:linear-gradient(#0B1620,#102231);border:1px solid var(--line);overflow:hidden}
+.tower .tgt{position:absolute;left:0;right:0;border-top:2px dashed var(--teal)}
+.tower .gnd{position:absolute;left:0;right:0;bottom:0;height:20px;background:#17293A}
+.tower .dr{position:absolute;left:50%;width:70px;margin-left:-35px;height:24px}
+/* games */
+.gwrap{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:18px;align-items:start}
+.slot{cursor:pointer}
+.parts{display:flex;flex-wrap:wrap;gap:8px}
+.part{background:var(--ink3);border:1px solid var(--line2);color:var(--paper);border-radius:10px;padding:9px 12px;font-size:14px;font-weight:500}
+.part.sel{background:var(--sig);color:var(--ink);border-color:var(--sig)}
+.part.done{opacity:.25;pointer-events:none;text-decoration:line-through}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.quiz{max-width:860px;margin:0 auto;padding:28px;display:flex;flex-direction:column;gap:18px}
+.qopts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qopt{text-align:left;background:var(--ink3);border:1px solid var(--line2);color:var(--paper);border-radius:12px;padding:16px;font-size:15px;line-height:1.4}
+.qopt:hover{border-color:var(--dim2)}
+.qopt.ok{background:#173A2A;border-color:var(--ok)}
+.qopt.no{background:#3A1A20;border-color:var(--red)}
+.qtimer{height:6px;background:var(--ink3);border-radius:3px;overflow:hidden}
+.qtimer i{display:block;height:100%;background:var(--sig);width:100%}
+.qhead{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:13px;color:var(--dim)}
+.qexp{color:var(--dim);line-height:1.5;min-height:22px}
+.ref table{width:100%;border-collapse:collapse;font-size:14px}
+.ref td{padding:8px 10px;border-top:1px solid var(--line);vertical-align:top}
+.ref td:first-child{font-family:var(--mono);color:var(--teal);white-space:nowrap}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(30px);background:var(--sig);color:var(--ink);font-weight:600;padding:12px 20px;border-radius:12px;opacity:0;transition:.35s;z-index:60;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%)}
+@media (max-width:1200px){.mwrap{grid-template-columns:1fr}.mlist{position:static;flex-direction:row;overflow:auto}.mitem{min-width:200px}.colR{position:static}.pidwrap{grid-template-columns:1fr}.tower{display:none}.gwrap{grid-template-columns:1fr}header{flex-wrap:wrap}.hright{margin-left:0}}
+@media (max-width:640px){main{padding:12px}.qopts{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.xp{display:none}header{position:static;gap:10px;padding:10px 12px}nav{flex-wrap:nowrap;overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch}nav button{white-space:nowrap;padding:7px 12px}.hright{width:100%}.pilot{flex:1;width:auto}.hud{top:16px;left:16px;gap:4px}.hud div{font-size:11px;padding:4px 6px}.hud div:nth-child(4){display:none}.status{top:auto;bottom:auto;right:16px;top:50px;font-size:11px}.edbody{height:300px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><svg width="30" height="30" viewBox="0 0 60 60" aria-hidden="true"><g stroke="#EEF1EA" stroke-width="4" stroke-linecap="round"><path d="M30 30L14 14M30 30L46 14M30 30L14 46M30 30L46 46"/></g><g fill="none" stroke="#FF6B2C" stroke-width="3"><circle cx="14" cy="14" r="10"/><circle cx="46" cy="14" r="10"/><circle cx="14" cy="46" r="10"/><circle cx="46" cy="46" r="10"/></g><rect x="24" y="22" width="12" height="16" rx="4" fill="#FF6B2C"/></svg><span>Дрон<b>Лаб</b><small style="display:block;font-family:var(--mono);font-size:10px;font-weight:400;letter-spacing:1.5px;color:var(--dim);margin-top:2px">ОСНОВИ НАЦ. СПРОТИВУ</small></span></div>
+  <nav id="nav">
+    <button data-v="missions" class="on">Місії коду</button>
+    <button data-v="pid">PID-лабораторія</button>
+    <button data-v="build">Збери дрон</button>
+    <button data-v="recog">Розпізнай БпЛА</button>
+    <button data-v="quiz">Бліц</button>
+    <button data-v="ref">Довідка API</button>
+  </nav>
+  <div class="hright">
+    <input class="pilot" id="pilot" placeholder="Позивний пілота" maxlength="30">
+    <div class="xp"><div class="r"><span id="rank">Курсант</span><b id="xpv">0 XP</b></div><div class="bar"><i id="xpbar"></i></div></div>
+    <a class="btn ghost" href="slides/" style="text-decoration:none">Презентація</a>
+    <button class="btn ghost" id="repBtn">Звіт</button>
+  </div>
+</header>
+
+<main>
+<!-- MISSIONS -->
+<section class="view on" id="v-missions">
+  <div class="mwrap">
+    <div class="mlist" id="mlist"></div>
+    <div class="colL">
+      <div class="panel brief" id="brief"></div>
+      <div class="ed">
+        <div class="edbar"><span class="dot a"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:6px" id="fname">mission.js</span><span style="margin-left:auto">JavaScript · Tab = відступ · Ctrl+Enter = запуск</span></div>
+        <div class="edbody" id="edbody"><div class="gut" id="gut"></div><div class="code"><pre id="hl" aria-hidden="true"></pre><textarea id="src" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" inputmode="text" aria-label="Код програми дрона"></textarea></div></div>
+      </div>
+      <div class="edact">
+        <button class="btn pri" id="runBtn">▶ Запустити місію</button>
+        <button class="btn" id="resetBtn">↺ Скинути код</button>
+        <button class="btn ghost" id="hintBtn">Підказка</button>
+        <span class="sp"></span>
+        <button class="btn ghost" id="solBtn" title="Відкривається після 3 спроб">Рішення 🔒</button>
+      </div>
+      <div class="console" id="con"><div class="l">Консоль польоту. Тут з’являться повідомлення log(), попередження та помилки.</div></div>
+    </div>
+    <div class="colR">
+      <div class="panel mapbox">
+        <canvas id="map" width="800" height="800"></canvas>
+        <div class="hud"><div>ВИС <b id="hAlt">0</b> м</div><div id="hBatW">БАТ <b id="hBat">100</b>%</div><div>Т <b id="hT">0</b> с</div><div>КУРС <b id="hHd">0</b>°</div></div>
+        <div class="status" id="stat">НА ЗЕМЛІ</div>
+        <canvas id="prof" width="800" height="100"></canvas>
+        <div class="play"><span>Швидкість відтворення</span><div class="seg" id="spd"><button data-s="1">×1</button><button data-s="4" class="on">×4</button><button data-s="12">×12</button></div><span style="flex:1"></span><button class="btn ghost" id="skipBtn" style="padding:6px 10px;font-size:12px">⏭ До кінця</button></div>
+        <div class="legend"><span><i style="background:#FF6B2C"></i>траєкторія</span><span><i style="background:rgba(255,90,106,.5)"></i>заборонена зона</span><span><i style="background:#EEF1EA"></i>вежа / перешкода</span><span><i style="background:rgba(143,211,193,.5)"></i>зйомка</span><span><i style="background:rgba(245,196,81,.5)"></i>зона спостереження</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PID -->
+<section class="view" id="v-pid">
+  <div class="pidwrap">
+    <div class="panel" style="padding:20px;display:flex;flex-direction:column;gap:10px">
+      <p class="eyebrow">PID-лабораторія</p>
+      <h2 style="font-size:22px">Утримай висоту 20 м</h2>
+      <p style="margin:0;color:var(--dim);line-height:1.5;font-size:14px">Автопілот керує тягою моторів. Підберіть коефіцієнти так, щоб дрон швидко піднявся на 20 м і не розгойдувався. Повзунки змінюють графік одразу.</p>
+      <div class="sl"><div class="h"><b>Kp</b><span id="kpv">2.0</span></div><input type="range" id="kp" min="0" max="15" step="0.1" value="2"><small>Пропорційна: сила реакції на похибку зараз.</small></div>
+      <div class="sl"><div class="h"><b>Ki</b><span id="kiv">0.00</span></div><input type="range" id="ki" min="0" max="5" step="0.05" value="0"><small>Інтегральна: прибирає сталу похибку (вантаж, вітер).</small></div>
+      <div class="sl"><div class="h"><b>Kd</b><span id="kdv">0.0</span></div><input type="range" id="kd" min="0" max="10" step="0.1" value="0"><small>Диференціальна: гальмує заздалегідь, але підсилює шум датчика.</small></div>
+      <button class="btn pri" id="pidCheck" style="justify-content:center">Перевірити налаштування</button>
+      <p class="eyebrow" style="margin-top:8px">Випробування</p>
+      <div class="chal" id="chal"></div>
+    </div>
+    <div class="panel" style="padding:16px">
+      <canvas id="pidc" width="1200" height="675"></canvas>
+      <div class="metrics" id="mets"></div>
+      <p style="color:var(--dim);font-size:13px;margin:12px 0 0;line-height:1.5" id="pidtip"></p>
+    </div>
+    <div class="tower" id="tower"><div class="gnd"></div><div class="tgt" id="ttgt"></div><svg class="dr" id="tdr" viewBox="0 0 70 24"><rect x="25" y="8" width="20" height="10" rx="3" fill="#FF6B2C"/><path d="M5 10H65" stroke="#EEF1EA" stroke-width="3"/><path d="M0 5H18M52 5H70" stroke="#9FB3C1" stroke-width="3" stroke-linecap="round"/></svg></div>
+  </div>
+</section>
+
+<!-- BUILD -->
+<section class="view" id="v-build">
+  <div class="gwrap">
+    <div class="panel" style="padding:16px;display:flex;justify-content:center">
+      <svg id="bsvg" viewBox="0 0 600 600" style="width:100%;max-width:640px" aria-label="Схема дрона для збирання"></svg>
+    </div>
+    <div class="panel" style="padding:20px;display:flex;flex-direction:column;gap:14px">
+      <p class="eyebrow">Гра · Збери дрон</p>
+      <h2 style="font-size:22px">Розстав вузли по місцях</h2>
+      <p style="margin:0;color:var(--dim);line-height:1.5;font-size:14px">Обери деталь, а потім торкнися її місця на схемі. Правильно: +20, помилка: −5. Швидкість додає бонус.</p>
+      <div style="display:flex;gap:10px"><div class="met" style="flex:1"><div class="k">РАХУНОК</div><div class="v" id="bScore">0</div></div><div class="met" style="flex:1"><div class="k">ЧАС</div><div class="v" id="bTime">0 с</div></div><div class="met" style="flex:1"><div class="k">РЕКОРД</div><div class="v" id="bBest">—</div></div></div>
+      <div class="parts" id="parts"></div>
+      <p id="bInfo" style="margin:0;min-height:44px;color:var(--teal);font-size:14px;line-height:1.5"></p>
+      <button class="btn" id="bRestart">↺ Почати знову</button>
+    </div>
+  </div>
+</section>
+
+<!-- RECOG -->
+<section class="view" id="v-recog">
+  <div class="panel quiz" id="recog"></div>
+</section>
+
+<!-- QUIZ -->
+<section class="view" id="v-quiz">
+  <div class="panel quiz" id="quiz"></div>
+</section>
+
+<!-- REF -->
+<section class="view" id="v-ref">
+  <div class="panel ref" style="padding:24px;max-width:980px;margin:0 auto">
+    <p class="eyebrow">Довідка</p>
+    <h2 style="font-size:24px;margin:6px 0 6px">Команди бортового ПЗ</h2>
+    <p style="color:var(--dim);line-height:1.5;margin:0 0 14px">Мова — JavaScript. Координати в метрах: полігон 200 × 200 м, x — на схід, y — на північ. Курс 0° — північ, 90° — схід.</p>
+    <table id="reftab"></table>
+  </div>
+</section>
+</main>
+
+<div class="modal" id="modal"><div class="panel mcard" id="mcard"></div></div>
+<div class="toast" id="toast"></div>
+
+<script id="core">
+/* ===================== ЯДРО СИМУЛЯТОРА ===================== */
+const WORLD = 200;
+const API_DOC = [
+  ['takeOff(h)', 'Злетіти на висоту h метрів (1–120).'],
+  ['land()', 'Сісти там, де дрон зараз.'],
+  ['goTo(x, y)', 'Летіти по прямій до точки (x, y) на поточній висоті.'],
+  ['forward(m)', 'Летіти вперед за курсом на m метрів.'],
+  ['turn(deg)', 'Повернутись на deg градусів (+ праворуч, − ліворуч).'],
+  ['setAlt(h)', 'Змінити висоту на h метрів.'],
+  ['setSpeed(v)', 'Горизонтальна швидкість 1–15 м/с (більше — швидше сідає батарея).'],
+  ['hover(s)', 'Зависнути на s секунд.'],
+  ['photo()', 'Зробити знімок. Площа кадру зростає з висотою.'],
+  ['deliver()', 'Передати вантаж (лише з висоти ≤ 3 м).'],
+  ['scan()', 'Тепловізор: true, якщо людина ближче 18 м (працює з висоти ≤ 40 м).'],
+  ['mark()', 'Позначити поточне місце на карті рятувальників.'],
+  ['returnHome()', 'RTL: набрати 30 м, повернутися на старт і сісти.'],
+  ['battery()', 'Заряд батареї, %.'],
+  ['altitude()', 'Поточна висота, м.'],
+  ['position()', 'Поточні координати: об’єкт {x, y}.'],
+  ['heading()', 'Поточний курс, градуси.'],
+  ['distanceTo(x, y)', 'Відстань від дрона до точки, м.'],
+  ['time()', 'Час від старту місії, с.'],
+  ['log(...)', 'Вивести повідомлення в консоль польоту.'],
+  ['home, target, route, area', 'Дані місії: точки та зони (є не в усіх місіях).']
+];
+const API_NAMES = ['takeOff','land','goTo','forward','turn','setAlt','setSpeed','hover','photo','deliver','scan','mark','returnHome','battery','altitude','position','heading','distanceTo','time','log'];
+
+const LEVELS = [
+ { id:'l1', title:'Перший зліт', tag:'takeOff · hover · land',
+   brief:'Перевірка систем перед справжньою роботою. Злетіть на 10 метрів, зависніть щонайменше на 3 секунди і м’яко сядьте.',
+   goals:['Набрати висоту 10 м','Зависнути ≥ 3 с','Сісти'],
+   bonus:[['Не більше 3 команд', (s)=>s.cmds<=3], ['Політ коротший за 12 с', (s)=>s.t<12]],
+   setup:{home:{x:100,y:100}, battery:100},
+   start:'// Місія 1. Ваша перша програма для дрона.\n// Кожна команда — окремий рядок, наприкінці крапка з комою.\n\ntakeOff(10);\n\n// допишіть зависання та посадку\n',
+   hint:'Потрібні три команди: takeOff(10); потім hover(3); і наостанок land();',
+   solution:'takeOff(10);\nhover(3);\nland();\n',
+   check(s){ if(s.maxAlt<9.5) return 'Дрон не піднявся на 10 м.'; if(s.maxAlt>15) return 'Задача — 10 м, а дрон піднявся на '+s.maxAlt.toFixed(0)+' м.'; if(s.hoverT<3) return 'Зависання тривало менше 3 секунд.'; if(s.air) return 'Дрон досі в повітрі — не забудьте land().'; return null; }
+ },
+ { id:'l2', title:'Аптечка', tag:'goTo · setAlt · deliver',
+   brief:'Фельдшеру на точці B терміново потрібна аптечка. Долетіть, знизьтесь до 3 м, передайте вантаж і поверніться на старт.',
+   goals:['Долетіти до точки B','Знизитись до 3 м і викликати deliver()','Повернутися і сісти на старті'],
+   bonus:[['Заряд після місії ≥ 85 %', (s)=>s.bat>=85], ['Без returnHome(): маршрут назад вручну', (s,c)=>!/returnHome\s*\(/.test(stripComments(c))]],
+   setup:{home:{x:25,y:25}, target:{x:150,y:150,label:'B'}, battery:100},
+   start:'// Місія 2. Координати точки B лежать у змінній target.\n// log(target) покаже їх у консолі.\n\ntakeOff(20);\n\n',
+   hint:'goTo(target.x, target.y); setAlt(3); deliver(); — потім знову наберіть висоту і goTo(home.x, home.y); land();',
+   solution:'takeOff(20);\ngoTo(target.x, target.y);\nsetAlt(3);\ndeliver();\nsetAlt(20);\ngoTo(home.x, home.y);\nland();\n',
+   check(s){ const d=s.delivered.find(p=>dist(p,s.S.target)<6); if(!d) return 'Вантаж не передано в точці B.'; if(s.air) return 'Дрон не сів.'; if(dist(s,s.S.home)>5) return 'Дрон сів не на старті.'; return null; }
+ },
+ { id:'l3', title:'Квадрат патруля', tag:'forward · turn · цикл for',
+   brief:'Облетіть периметр складу: квадрат 100 × 100 м. Дрон стоїть у лівому нижньому куті, ніс дивиться на північ. Пройдіть через три контрольні точки й поверніться.',
+   goals:['Пройти три контрольні точки','Повернутися на старт і сісти'],
+   bonus:[['Використано цикл', (s,c)=>/\b(for|while)\b/.test(stripComments(c))], ['Не більше 6 рядків коду', (s,c)=>codeLines(c)<=6]],
+   setup:{home:{x:50,y:50}, battery:100, points:[{x:50,y:150},{x:150,y:150},{x:150,y:50}]},
+   start:'// Місія 3. forward(m) — уперед на m метрів, turn(90) — поворот праворуч.\n\ntakeOff(15);\nforward(100);\nturn(90);\n\n// продовжіть самостійно… а може, тут допоможе цикл?\n',
+   hint:'Чотири однакові пари команд можна загорнути в цикл: for (let i = 0; i < 4; i++) { forward(100); turn(90); }',
+   solution:'takeOff(15);\nfor (let i = 0; i < 4; i++) {\n  forward(100);\n  turn(90);\n}\nland();\n',
+   check(s){ if(s.visited.size<3) return 'Пройдено контрольних точок: '+s.visited.size+' з 3.'; if(s.air) return 'Дрон не сів.'; if(dist(s,s.S.home)>5) return 'Дрон сів не на старті.'; return null; }
+ },
+ { id:'l4', title:'Вежа на шляху', tag:'проміжна точка · висота',
+   brief:'Між вами й майданчиком B стоїть вежа зв’язку висотою 70 м, а з боків — заборонені зони. Долетіть до B і сядьте там. Можна облетіти вежу або перелетіти її.',
+   goals:['Не зачепити вежу','Не залетіти в заборонені зони','Сісти на майданчику B'],
+   bonus:[['Обхід збоку: висота не більше 50 м', (s)=>s.maxAlt<=50], ['Заряд після місії ≥ 88 %', (s)=>s.bat>=88]],
+   setup:{home:{x:20,y:100}, target:{x:180,y:100,label:'B'}, battery:100, towers:[{x:100,y:100,r:12,h:70}], nofly:[{x:100,y:165,r:32},{x:100,y:35,r:32}]},
+   start:'// Місія 4. Прямий шлях перекриває вежа (x 100, y 100, висота 70 м).\n\ntakeOff(20);\ngoTo(target.x, target.y);   // що станеться?\nland();\n',
+   hint:'Спосіб 1: setAlt(80) перед goTo. Спосіб 2: проміжна точка між вежею та зоною, наприклад goTo(100, 122).',
+   solution:'takeOff(20);\ngoTo(100, 122);\ngoTo(target.x, target.y);\nland();\n',
+   check(s){ if(s.air) return 'Дрон не сів.'; if(dist(s,s.S.target)>6) return 'Дрон сів не на майданчику B.'; return null; }
+ },
+ { id:'l5', title:'Оцінка руйнувань', tag:'масив · for…of',
+   brief:'Після обстрілу громада просить оглянути шість об’єктів: школу, водокачку, міст та інші. Координати — у масиві route. Їхні координати — у масиві route. Сфотографуйте кожну точку й поверніться.',
+   goals:['Знімок у кожній із 6 точок','Повернутися і сісти на старті'],
+   bonus:[['Обхід масиву циклом', (s,c)=>/\bfor\b[\s\S]*route|route\s*\.\s*forEach/.test(stripComments(c))], ['Заряд після місії ≥ 75 %', (s)=>s.bat>=75]],
+   setup:{home:{x:20,y:20}, battery:100, route:[{x:40,y:170},{x:100,y:180},{x:170,y:160},{x:180,y:90},{x:120,y:60},{x:60,y:100}], photoPoints:true},
+   start:'// Місія 5. route — масив точок: route[0].x, route[0].y …\n// log(route.length) покаже, скільки їх.\n\ntakeOff(25);\n\n',
+   hint:'for (const p of route) { goTo(p.x, p.y); photo(); }  — а потім returnHome();',
+   solution:'takeOff(25);\nfor (const p of route) {\n  goTo(p.x, p.y);\n  photo();\n}\nreturnHome();\n',
+   check(s){ const n=s.S.route.filter(p=>s.photos.some(f=>dist(f,p)<6)).length; if(n<6) return 'Сфотографовано точок: '+n+' з 6.'; if(s.air) return 'Дрон не сів.'; if(dist(s,s.S.home)>5) return 'Дрон сів не на старті.'; return null; }
+ },
+ { id:'l6', title:'Резерв батареї', tag:'if · battery() · break',
+   brief:'Батарею не встигли зарядити: лише 18 %. На маршруті 10 точок — на всі не вистачить. Зніміть якомога більше, але обов’язково поверніться: розряджений дрон падає.',
+   goals:['Щонайменше 3 знімки точок маршруту','Повернутися і сісти на старті, не розрядивши батарею'],
+   bonus:[['5 і більше знімків', (s)=>s.S.route.filter(p=>s.photos.some(f=>dist(f,p)<6)).length>=5], ['Сіли із запасом 3–12 %', (s)=>s.bat>=3&&s.bat<=12]],
+   setup:{home:{x:100,y:20}, battery:18, route:[{x:60,y:60},{x:140,y:70},{x:170,y:120},{x:120,y:140},{x:50,y:130},{x:30,y:185},{x:110,y:185},{x:185,y:185},{x:180,y:40},{x:20,y:20}], photoPoints:true},
+   start:'// Місія 6. Батарея лише 18 %.\n// battery() — заряд, distanceTo(home.x, home.y) — відстань додому.\n\ntakeOff(25);\nfor (const p of route) {\n  goTo(p.x, p.y);\n  photo();\n}\nreturnHome();\n',
+   hint:'Перед кожною точкою перевіряйте заряд: if (battery() < ПОРІГ) break; Підберіть поріг: зависокий — мало знімків, занизький — дрон не дотягне додому. Розумніше рахувати запас через distanceTo().',
+   solution:'takeOff(25);\nfor (const p of route) {\n  // запас: дорога до точки + дорога додому\n  const need = (distanceTo(p.x, p.y) + Math.hypot(p.x - home.x, p.y - home.y)) * 0.025 + 3;\n  if (battery() < need) break;\n  goTo(p.x, p.y);\n  photo();\n}\nreturnHome();\n',
+   check(s){ const n=s.S.route.filter(p=>s.photos.some(f=>dist(f,p)<6)).length; if(s.air) return 'Дрон не сів.'; if(dist(s,s.S.home)>5) return 'Дрон сів не на старті.'; if(n<3) return 'Знято лише '+n+' точок, потрібно щонайменше 3.'; return null; }
+ },
+ { id:'l7', title:'Карта для саперів', tag:'вкладені цикли · покриття',
+   brief:'Поле біля деокупованого села може бути заміноване. Саперам ДСНС потрібен ортофотоплан (бірюзова зона), щоб спланувати обстеження без ризику для людей. Покрийте знімками щонайменше 90 % площі. Що вище летите — то більший кадр, але вище 50 м знімки розмиті й не зараховуються.',
+   goals:['Покриття поля ≥ 90 %','Повернутися і сісти на старті'],
+   bonus:[['Покриття ≥ 98 %', (s)=>coverage(s)>=98], ['Не більше 25 знімків', (s)=>s.photos.filter(f=>!f.bad).length<=25]],
+   setup:{home:{x:20,y:20}, battery:100, area:{x:40,y:40,w:140,h:100}, photoMaxAlt:50},
+   start:'// Місія 7. area = {x, y, w, h} — прямокутник поля.\n// Радіус кадру = висота × 0.6. На 40 м кадр має радіус 24 м.\n\ntakeOff(40);\n\n',
+   hint:'Пройдіть поле смугами: зовнішній цикл по y з кроком ~30 м, внутрішній по x з кроком ~30 м, у кожній точці photo().',
+   solution:'takeOff(40);\nlet dir = 1;\nfor (let y = area.y + 10; y <= area.y + area.h; y += 30) {\n  for (let i = 0; i <= 4; i++) {\n    const x = dir > 0 ? area.x + 10 + i * 30 : area.x + 130 - i * 30;\n    goTo(x, y);\n    photo();\n  }\n  dir = -dir;   // наступна смуга у зворотний бік\n}\nreturnHome();\n',
+   check(s){ const c=coverage(s); if(c<90) return 'Покриття поля '+c.toFixed(0)+' %, потрібно ≥ 90 %.'; if(s.air) return 'Дрон не сів.'; if(dist(s,s.S.home)>5) return 'Дрон сів не на старті.'; return null; }
+ },
+ { id:'l8', title:'Пошук і рятування', tag:'алгоритм пошуку · scan()',
+   brief:'Виклик для пошуково-рятувальної групи ДСНС: у лісі (зелена зона) загубилася людина. Де саме — невідомо, і при кожному запуску місце інше. Прочешіть ліс тепловізором, позначте людину через mark() і поверніться.',
+   goals:['Знайти людину: scan() повертає true','Позначити місце mark(), щоб рятувальники вийшли точно до неї','Повернутися і сісти на старті'],
+   bonus:[['Знайдено швидше ніж за 200 с', (s)=>s.marks.length&&s.marks[0].t<200], ['Заряд після місії ≥ 45 %', (s)=>s.bat>=45]],
+   setup:{home:{x:100,y:15}, battery:100, forest:{x:20,y:60,w:170,h:120}, person:true},
+   start:'// Місія 8. Ліс: x від 20 до 190, y від 60 до 180.\n// scan() бачить людину в радіусі 18 м з висоти до 40 м.\n\ntakeOff(30);\n\n',
+   hint:'Прочісуйте смугами через 30 м по y і скануйте кожні 15 м по x. Знайшли — mark(), позначте found = true і вийдіть з обох циклів.',
+   solution:'takeOff(30);\nlet found = false;\nfor (let y = 75; y <= 180 && !found; y += 30) {\n  for (let x = 25; x <= 190; x += 15) {\n    goTo(x, y);\n    if (scan()) {\n      mark();\n      log("Людину знайдено:", position());\n      found = true;\n      break;\n    }\n  }\n}\nreturnHome();\n',
+   check(s){ if(!s.marks.some(m=>dist(m,s.person)<19)) return s.marks.length?'Позначка надто далеко від людини.':'Людину не знайдено й не позначено.'; if(s.air) return 'Дрон не сів.'; if(dist(s,s.S.home)>5) return 'Дрон сів не на старті.'; return null; }
+ },
+ { id:'l9', title:'Повітряна розвідка', tag:'висота · зона спостереження',
+   brief:'Підрозділу потрібні знімки п’яти об’єктів у районі спостереження (жовта зона). Нижче 80 м дрон чути й видно з землі, тож у зоні тримайте висоту щонайменше 80 м. Зніміть усі об’єкти і поверніться.',
+   goals:['Знімок кожного з 5 об’єктів','У жовтій зоні — висота не нижче 80 м','Повернутися і сісти на старті'],
+   bonus:[['Не вище 100 м: чіткіші знімки', (s)=>s.maxAlt<=100], ['Заряд після місії ≥ 70 %', (s)=>s.bat>=70]],
+   setup:{home:{x:20,y:20}, battery:100, route:[{x:90,y:120},{x:150,y:105},{x:178,y:160},{x:120,y:178},{x:75,y:165}], zones:[{x:60,y:85,w:135,h:110,min:80}], photoPoints:true},
+   start:'// Місія 9. Об’єкти — у масиві route. Жовта зона: x 60–195, y 85–195.\n// Що станеться, якщо залетіти туди на 30 м?\n\ntakeOff(30);\ngoTo(route[0].x, route[0].y);\nphoto();\n',
+   hint:'Наберіть висоту ДО входу в зону: takeOff(85); далі цикл по route з photo(). returnHome() тримає поточну висоту, якщо вона вища за 30 м.',
+   solution:'takeOff(85);\nfor (const p of route) {\n  goTo(p.x, p.y);\n  photo();\n}\nreturnHome();\n',
+   check(s){ const n=s.S.route.filter(p=>s.photos.some(f=>dist(f,p)<6)).length; if(n<5) return 'Знято об’єктів: '+n+' з 5.'; if(s.air) return 'Дрон не сів.'; if(dist(s,s.S.home)>5) return 'Дрон сів не на старті.'; return null; }
+ }
+];
+
+function dist(a,b){ return Math.hypot(a.x-b.x,a.y-b.y); }
+function stripComments(c){ return c.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\/\/.*$/gm,''); }
+function codeLines(c){ return stripComments(c).split('\n').filter(l=>l.trim()).length; }
+function coverage(s){
+  const A=s.S.area; if(!A) return 0; let tot=0,cov=0; const ph=s.photos.filter(f=>!f.bad);
+  for(let x=A.x+2;x<A.x+A.w;x+=4) for(let y=A.y+2;y<A.y+A.h;y+=4){ tot++; if(ph.some(f=>(f.x-x)**2+(f.y-y)**2<=f.r*f.r)) cov++; }
+  return tot?cov/tot*100:0;
+}
+function mkRng(seed){ let s=seed%2147483647; if(s<=0)s+=2147483646; return ()=>{ s=s*16807%2147483647; return (s-1)/2147483646; }; }
+
+class Stop extends Error{}
+class Sim{
+  constructor(L, seed){
+    this.L=L; const S=this.S=JSON.parse(JSON.stringify(L.setup));
+    S.points=S.points||[]; S.towers=S.towers||[]; S.nofly=S.nofly||[]; S.zones=S.zones||[];
+    this.x=S.home.x; this.y=S.home.y; this.alt=0; this.hd=0; this.spd=8; this.bat=S.battery; this.t=0;
+    this.air=false; this.frames=[]; this.photos=[]; this.visited=new Set(); this.delivered=[]; this.marks=[]; this.scans=[]; this.logs=[];
+    this.cmds=0; this.maxAlt=0; this.hoverT=0; this.dead=null; this.ceiling=120;
+    if(S.person){ const r=mkRng(seed||Date.now()); const F=S.forest; this.person={x:F.x+8+r()*(F.w-16), y:F.y+8+r()*(F.h-16)}; }
+    this.push('start');
+  }
+  push(ev){ this.frames.push({t:this.t,x:this.x,y:this.y,alt:this.alt,hd:this.hd,bat:this.bat,air:this.air,ev:ev||null}); }
+  fail(kind,msg){ this.dead={kind,msg}; this.push(kind); throw new Stop(msg); }
+  cmd(){ if(this.dead) throw new Stop(); this.cmds++; if(this.cmds>4000) this.fail('limit','Понад 4000 команд. Схоже на нескінченний цикл.'); if(this.t>2400) this.fail('limit','Місія триває понад 40 хв — це ліміт симулятора.'); }
+  need(name){ if(!this.air) this.fail('error', name+'(): дрон на землі. Спершу takeOff(висота).'); }
+  num(v,name){ if(typeof v!=='number'||!isFinite(v)) this.fail('error', name+' очікує число, а отримала: '+String(v)); return v; }
+  drain(dt,kind){
+    const r = kind==='climb'?0.32 : kind==='desc'?0.1 : kind==='move'?0.08+0.0125*this.spd : 0.1;
+    this.bat-=r*dt;
+    if(this.bat<=0){ this.bat=0; if(this.air){ this.air=false; this.alt=0; this.fail('crash','Батарея розрядилася в повітрі. Дрон упав.'); } }
+  }
+  env(){
+    if(!this.air) return;
+    if(this.x<0||this.x>WORLD||this.y<0||this.y>WORLD) this.fail('violation','Дрон вилетів за межі полігону.');
+    for(const z of this.S.nofly) if(dist(this,z)<z.r) this.fail('violation','Порушення: дрон залетів у заборонену зону.');
+    for(const w of this.S.towers) if(dist(this,w)<w.r && this.alt<w.h) this.fail('crash','Зіткнення з вежею висотою '+w.h+' м.');
+    for(const z of this.S.zones) if(this.x>z.x&&this.x<z.x+z.w&&this.y>z.y&&this.y<z.y+z.h&&this.alt<z.min-1e-6) this.fail('violation','Дрон помітили: у жовтій зоні висота '+this.alt.toFixed(0)+' м, а потрібно не нижче '+z.min+' м.');
+    this.S.points.forEach((p,i)=>{ if(dist(this,p)<6) this.visited.add(i); });
+  }
+  tick(dt,kind){ this.t+=dt; if(kind==='hover') this.hoverT+=dt; this.drain(dt,kind); this.env(); this.push(); }
+  vert(h){
+    if(h>this.ceiling){ this.fail('violation','Висота '+h+' м перевищує дозволені 120 м.'); }
+    h=Math.max(0,h); const dir=Math.sign(h-this.alt);
+    while(Math.abs(h-this.alt)>1e-6){ const d=Math.min(Math.abs(h-this.alt),0.75); this.alt+=dir*d; this.maxAlt=Math.max(this.maxAlt,this.alt); this.tick(d/3, dir>0?'climb':'desc'); }
+  }
+  move(tx,ty,keep){
+    const dx=tx-this.x, dy=ty-this.y, D=Math.hypot(dx,dy); if(D<1e-6) return;
+    if(!keep) this.hd=(Math.atan2(dx,dy)*180/Math.PI+360)%360;
+    const ux=dx/D, uy=dy/D; let left=D;
+    while(left>1e-6){ const d=Math.min(left,this.spd*0.25); this.x+=ux*d; this.y+=uy*d; left-=d; this.tick(d/this.spd,'move'); }
+  }
+  wait(s,kind){ let left=s; while(left>1e-6){ const d=Math.min(left,0.25); left-=d; this.tick(d,kind||'hover'); } }
+  api(){
+    const s=this, r1=v=>Math.round(v*10)/10;
+    return {
+      takeOff(h=10){ s.cmd(); s.num(h,'takeOff'); if(h<1) s.fail('error','takeOff: висота має бути щонайменше 1 м.'); s.air=true; s.push('takeoff'); s.vert(h); },
+      land(){ s.cmd(); s.need('land'); s.vert(0); s.air=false; s.push('land'); },
+      goTo(x,y){ s.cmd(); s.need('goTo'); s.num(x,'goTo'); s.num(y,'goTo'); s.move(x,y); },
+      forward(m){ s.cmd(); s.need('forward'); s.num(m,'forward'); const a=s.hd*Math.PI/180; s.move(s.x+Math.sin(a)*m, s.y+Math.cos(a)*m, true); },
+      turn(deg){ s.cmd(); s.num(deg,'turn'); const steps=Math.max(1,Math.ceil(Math.abs(deg)/22.5)); for(let i=0;i<steps;i++){ s.hd=((s.hd+deg/steps)%360+360)%360; s.tick(Math.abs(deg)/steps/90, s.air?'hover':'ground'); } s.hd=Math.round(s.hd*1000)/1000%360; },
+      setAlt(h){ s.cmd(); s.need('setAlt'); s.num(h,'setAlt'); if(h<0.5) s.fail('error','setAlt: для посадки використовуйте land().'); s.vert(h); },
+      setSpeed(v){ s.cmd(); s.num(v,'setSpeed'); s.spd=Math.max(1,Math.min(15,v)); },
+      hover(sec=1){ s.cmd(); s.need('hover'); s.num(sec,'hover'); s.wait(Math.max(0,sec)); },
+      photo(){ s.cmd(); s.need('photo'); const bad=s.S.photoMaxAlt && s.alt>s.S.photoMaxAlt; if(bad) s.logs.push({t:s.t,k:'w',text:'Знімок розмитий: висота '+r1(s.alt)+' м > '+s.S.photoMaxAlt+' м'}); s.photos.push({x:s.x,y:s.y,alt:s.alt,r:s.alt*0.6,t:s.t,bad}); s.push('photo'); s.wait(0.5); },
+      deliver(){ s.cmd(); if(s.air && s.alt>3.01) s.fail('error','deliver(): висота '+r1(s.alt)+' м. Знизьтесь до 3 м: setAlt(3).'); s.delivered.push({x:s.x,y:s.y,t:s.t}); s.push('deliver'); s.wait(1); },
+      scan(){ s.cmd(); s.need('scan'); s.scans.push({x:s.x,y:s.y,t:s.t}); s.push('scan'); s.wait(0.5); if(s.alt>40){ s.logs.push({t:s.t,k:'w',text:'scan(): з висоти '+r1(s.alt)+' м тепловізор нічого не розрізняє'}); return false; } return !!s.person && dist(s,s.person)<=18; },
+      mark(){ s.cmd(); s.marks.push({x:s.x,y:s.y,t:s.t}); s.push('mark'); },
+      returnHome(){ s.cmd(); s.need('returnHome'); s.logs.push({t:s.t,k:'o',text:'RTL: повернення на старт'}); if(s.alt<30) s.vert(30); s.move(s.S.home.x,s.S.home.y); s.vert(0); s.air=false; s.push('land'); },
+      battery(){ s.cmd(); return r1(s.bat); },
+      altitude(){ return r1(s.alt); },
+      position(){ return {x:r1(s.x), y:r1(s.y)}; },
+      heading(){ return Math.round(s.hd); },
+      distanceTo(x,y){ s.num(x,'distanceTo'); s.num(y,'distanceTo'); return r1(Math.hypot(x-s.x,y-s.y)); },
+      time(){ return r1(s.t); },
+      log(...a){ s.logs.push({t:s.t,k:'u',text:a.map(fmt).join(' ')}); if(s.logs.length>500) s.fail('limit','Забагато log() — понад 500 повідомлень.'); }
+    };
+  }
+}
+function fmt(v){ if(typeof v==='string') return v; try{ return JSON.stringify(v); }catch(e){ return String(v); } }
+
+/* вставляємо охорону від нескінченних циклів */
+function instrument(code){
+  let out='', i=0; const n=code.length;
+  while(i<n){
+    const c=code[i];
+    if(c==='/'&&code[i+1]==='/'){ let j=code.indexOf('\n',i); if(j<0)j=n; out+=code.slice(i,j); i=j; continue; }
+    if(c==='/'&&code[i+1]==='*'){ let j=code.indexOf('*/',i+2); j=j<0?n:j+2; out+=code.slice(i,j); i=j; continue; }
+    if(c==='"'||c==="'"||c==='`'){ let j=i+1; while(j<n&&code[j]!==c){ if(code[j]==='\\')j++; j++; } out+=code.slice(i,j+1); i=j+1; continue; }
+    const prev=i>0?code[i-1]:' ';
+    if(!/[\w$]/.test(prev)){
+      const m=/^(for|while)\b/.exec(code.slice(i,i+6));
+      if(m){
+        let j=i+m[1].length; while(j<n&&/\s/.test(code[j]))j++;
+        if(code[j]==='('){ let d=0,k=j; for(;k<n;k++){ if(code[k]==='(')d++; else if(code[k]===')'){ d--; if(d===0)break; } }
+          let q=k+1; while(q<n&&/\s/.test(code[q]))q++;
+          if(code[q]==='{'){ out+=code.slice(i,q+1)+' __g();'; i=q+1; continue; }
+        }
+      }
+      if(code.slice(i,i+2)==='do'&&!/[\w$]/.test(code[i+2]||' ')){ let q=i+2; while(q<n&&/\s/.test(code[q]))q++; if(code[q]==='{'){ out+=code.slice(i,q+1)+' __g();'; i=q+1; continue; } }
+    }
+    out+=c; i++;
+  }
+  return out;
+}
+
+function runMission(L, code, seed){
+  const sim=new Sim(L, seed); const api=sim.api(); let loops=0; const t0=Date.now();
+  const __g=()=>{ if(++loops>200000 || Date.now()-t0>2500){ sim.dead={kind:'limit',msg:'Цикл не закінчується (понад 200 000 повторів). Перевірте умову циклу.'}; throw new Stop(); } };
+  const data={home:sim.S.home, target:sim.S.target, route:sim.S.route, area:sim.S.area, points:sim.S.points};
+  const names=[...API_NAMES,'home','target','route','area','points','__g'];
+  const vals=[...API_NAMES.map(k=>api[k]), data.home, data.target, data.route, data.area, data.points, __g];
+  let err=null;
+  try{
+    const fn=new Function(...names, '"use strict";\n'+instrument(code));
+    fn(...vals);
+  }catch(e){
+    if(!(e instanceof Stop)){
+      let line=null; const m=/<anonymous>:(\d+):(\d+)/.exec(e.stack||''); if(m && e.name!=='SyntaxError') line=+m[1]-3;
+      err={msg:translateErr(e), line};
+      sim.dead={kind:'code', msg:err.msg};
+      sim.push('code');
+    }
+  }
+  let verdict=null, stars=0, bonus=[];
+  if(!sim.dead){
+    verdict=L.check(sim);
+    if(!verdict){ stars=1; bonus=L.bonus.map(([label,f])=>{ let ok=false; try{ ok=!!f(sim,code); }catch(e){} if(ok) stars++; return {label,ok}; }); }
+  }
+  return {sim, err, verdict, stars, bonus, ok:!sim.dead && !verdict};
+}
+function translateErr(e){
+  const m=e.message||String(e);
+  let r;
+  if((r=/^(.+) is not defined$/.exec(m))) return 'Невідоме ім’я «'+r[1]+'». Перевірте написання — великі й малі літери різняться.';
+  if((r=/^(.+) is not a function$/.exec(m))) return '«'+r[1]+'» — не функція. Можливо, пропущено дужки або помилка в назві.';
+  if(/Unexpected end of input/.test(m)) return 'Програма обірвалась: бракує закривної дужки } або ).';
+  if((r=/Unexpected token '?(.+?)'?$/.exec(m))) return 'Синтаксична помилка: неочікуваний символ «'+r[1]+'».';
+  if(/Invalid or unexpected token/.test(m)) return 'Синтаксична помилка: неправильний символ (лапки? крапка з комою?).';
+  if(/Cannot read prop/.test(m)) return 'Звернення до властивості неіснуючого об’єкта: '+m;
+  if(/Assignment to constant/.test(m)) return 'Спроба змінити const. Для змінних, що змінюються, використовуйте let.';
+  return (e.name==='SyntaxError'?'Синтаксична помилка: ':'Помилка: ')+m;
+}
+</script>
+
+<script>
+/* ===================== ЗБЕРЕЖЕННЯ ТА XP ===================== */
+const store={ get(k,d){ try{ const v=localStorage.getItem('dronlab_'+k); return v===null?d:JSON.parse(v); }catch(e){ return d; } }, set(k,v){ try{ localStorage.setItem('dronlab_'+k,JSON.stringify(v)); }catch(e){} } };
+const prog=store.get('prog',{levels:{},pid:{},build:0,quiz:0});
+const RANKS=[[0,'Курсант'],[300,'Оператор'],[900,'Пілот'],[1800,'Інструктор'],[2800,'Ас']];
+function xpTotal(){ let x=0; for(const k in prog.levels) x+=(prog.levels[k].stars||0)*100; for(const k in prog.pid) if(prog.pid[k]) x+=150; x+=prog.build||0; x+=prog.quiz||0; x+=prog.recog||0; return x; }
+function saveProg(){ store.set('prog',prog); renderXP(); }
+function renderXP(){
+  const x=xpTotal(); let i=0; while(i<RANKS.length-1&&x>=RANKS[i+1][0]) i++;
+  const lo=RANKS[i][0], hi=i<RANKS.length-1?RANKS[i+1][0]:lo+1000;
+  $('#rank').textContent=RANKS[i][1]; $('#xpv').textContent=x+' XP'; $('#xpbar').style.width=Math.min(100,(x-lo)/(hi-lo)*100)+'%';
+}
+function $(q){ return document.querySelector(q); }
+function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('on'); clearTimeout(toast.h); toast.h=setTimeout(()=>el.classList.remove('on'),2200); }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+const pilot=$('#pilot'); pilot.value=store.get('pilot',''); pilot.oninput=()=>store.set('pilot',pilot.value);
+
+/* навігація */
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+b.dataset.v));
+  if(b.dataset.v==='missions'){ drawMap(...lastDraw); drawProf(lastDraw[1],lastDraw[2]); } if(b.dataset.v==='pid') pidUpdate(true); if(b.dataset.v==='quiz'&&!quiz.started) quizIntro(); if(b.dataset.v==='recog'&&!recog.list) recogIntro();
+});
+
+/* ===================== МІСІЇ ===================== */
+let cur=0, playing=null, lastRun=null, speedMul=4;
+const src=$('#src'), hl=$('#hl'), gut=$('#gut');
+const FN=new Set(API_NAMES), KW=new Set(['for','of','in','let','const','var','if','else','while','do','break','continue','return','function','true','false','null','new','Math']), GL=new Set(['home','target','route','area','points']);
+function highlight(code){
+  const re=/(\/\/.*$|\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)/gm;
+  let out='', last=0, m;
+  while((m=re.exec(code))){ out+=esc(code.slice(last,m.index)); const t=esc(m[0]);
+    if(m[1]) out+='<span class="tk-c">'+t+'</span>'; else if(m[2]) out+='<span class="tk-s">'+t+'</span>'; else if(m[3]) out+='<span class="tk-n">'+t+'</span>';
+    else if(FN.has(m[4])) out+='<span class="tk-f">'+t+'</span>'; else if(KW.has(m[4])) out+='<span class="tk-k">'+t+'</span>'; else if(GL.has(m[4])) out+='<span class="tk-g">'+t+'</span>'; else out+=t;
+    last=re.lastIndex; }
+  return out+esc(code.slice(last))+'\n';
+}
+let errLine=null;
+function syncEd(){
+  hl.innerHTML=highlight(src.value);
+  const n=src.value.split('\n').length; let g=''; for(let i=1;i<=n;i++) g+='<div'+(i===errLine?' class="err"':'')+'>'+i+'</div>'; gut.innerHTML=g;
+  src.style.height='auto'; src.style.height=src.scrollHeight+'px';
+  src.style.width='auto'; src.style.width=Math.max(src.parentElement.clientWidth, src.scrollWidth)+'px';
+  store.set('code_'+LEVELS[cur].id, src.value);
+}
+src.addEventListener('input',()=>{ errLine=null; syncEd(); });
+src.addEventListener('keydown',e=>{
+  if(e.key==='Tab'){ e.preventDefault(); const s=src.selectionStart, en=src.selectionEnd; src.setRangeText('  ',s,en,'end'); syncEd(); }
+  else if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); runCur(); }
+  else if(e.key==='}'){ const s=src.selectionStart; const ls=src.value.lastIndexOf('\n',s-1)+1; const before=src.value.slice(ls,s); if(/^ {2,}$/.test(before)&&src.selectionEnd===s){ e.preventDefault(); src.setRangeText(before.slice(2)+'}',ls,s,'end'); syncEd(); } }
+  else if(e.key==='Enter'){ const s=src.selectionStart; const ls=src.value.lastIndexOf('\n',s-1)+1; const ind=/^\s*/.exec(src.value.slice(ls,s))[0]; const extra=/\{\s*$/.test(src.value.slice(ls,s))?'  ':''; e.preventDefault(); src.setRangeText('\n'+ind+extra,s,src.selectionEnd,'end'); syncEd(); }
+});
+
+function renderList(){
+  $('#mlist').innerHTML=LEVELS.map((L,i)=>{ const st=(prog.levels[L.id]||{}).stars||0;
+    return '<button class="mitem'+(i===cur?' on':'')+'" data-i="'+i+'"><span class="n">0'+(i+1)+'</span><span class="t">'+esc(L.title)+'</span><span class="s"><span class="stars">'+'★'.repeat(st)+'<span class="off">'+'★'.repeat(3-st)+'</span></span> · '+esc(L.tag)+'</span></button>'; }).join('');
+  document.querySelectorAll('.mitem').forEach(b=>b.onclick=()=>selectLevel(+b.dataset.i));
+}
+function renderBrief(){
+  const L=LEVELS[cur];
+  const used=new Set(); (L.solution.match(/[A-Za-z]+(?=\s*\()/g)||[]).forEach(f=>{ if(FN.has(f)) used.add(f); });
+  ['battery','distanceTo','log'].forEach(f=>{ if(L.id==='l6') used.add(f); });
+  used.add('log');
+  $('#brief').innerHTML='<p class="eyebrow">Місія 0'+(cur+1)+' · '+esc(L.tag)+'</p><h2>'+esc(L.title)+'</h2><p>'+esc(L.brief)+'</p>'+
+    '<ul class="goals">'+L.goals.map(g=>'<li>'+esc(g)+'</li>').join('')+L.bonus.map(b=>'<li class="b">Бонус ★ '+esc(b[0])+'</li>').join('')+'</ul>'+
+    '<p style="margin:0;font-size:12px;color:var(--dim2)">Торкніться команди, щоб вставити її в код:</p><div class="chips">'+[...used].map(f=>'<span class="chip" data-f="'+f+'">'+f+'()</span>').join('')+'</div>';
+  document.querySelectorAll('#brief .chip').forEach(c=>c.onclick=()=>{ const d=API_DOC.find(a=>a[0].startsWith(c.dataset.f+'(')); conLine('l', d?d[0]+' — '+d[1]:c.dataset.f); const sig=d?d[0]:c.dataset.f+'()'; const ins=sig.replace(/\(.*\)/, m=>m==='()'?'()':'(') + (sig.endsWith('()')?';':''); const st=src.selectionStart; src.focus(); src.setRangeText(ins, st, src.selectionEnd, 'end'); syncEd(); });
+  $('#fname').textContent='mission_0'+(cur+1)+'.js';
+  const at=(prog.levels[L.id]||{}).tries||0; $('#solBtn').textContent=at>=3?'Рішення':'Рішення 🔒'; $('#solBtn').disabled=at<3;
+}
+function selectLevel(i){
+  stopPlay(); cur=i; lastRun=null; errLine=null;
+  src.value=store.get('code_'+LEVELS[i].id, LEVELS[i].start);
+  renderList(); renderBrief(); syncEd();
+  $('#con').innerHTML=''; conLine('l','Місію «'+LEVELS[i].title+'» завантажено. Напишіть програму і натисніть «Запустити».');
+  previewSim=new Sim(LEVELS[i], 1); setHud(previewSim.frames[0]); drawMap(); drawProf();
+}
+let previewSim=null;
+function conLine(k,text,t){ const c=$('#con'); const d=document.createElement('div'); d.className=k; d.innerHTML=(t!=null?'<b>['+t.toFixed(1).padStart(6,' ')+' с]</b> ':'')+esc(text); c.appendChild(d); c.scrollTop=c.scrollHeight; }
+
+$('#runBtn').onclick=runCur;
+$('#resetBtn').onclick=()=>{ src.value=LEVELS[cur].start; errLine=null; syncEd(); toast('Код повернуто до початкового'); };
+$('#hintBtn').onclick=()=>conLine('w','Підказка: '+LEVELS[cur].hint);
+$('#solBtn').onclick=()=>{ const L=LEVELS[cur]; if(confirmBox('Показати еталонне рішення? Ваш поточний код буде замінено.', ()=>{ src.value=L.solution; syncEd(); })); };
+$('#skipBtn').onclick=()=>{ if(playing) playing.skip=true; };
+document.querySelectorAll('#spd button').forEach(b=>b.onclick=()=>{ speedMul=+b.dataset.s; document.querySelectorAll('#spd button').forEach(x=>x.classList.toggle('on',x===b)); });
+
+function runCur(){
+  stopPlay(); const L=LEVELS[cur];
+  const pr=prog.levels[L.id]=prog.levels[L.id]||{stars:0,tries:0}; pr.tries++; saveProg(); renderBrief();
+  const fixed=src.value.replace(/[\u201C\u201D\u201E\u00AB\u00BB]/g,'"').replace(/[\u2018\u2019\u201A]/g,"'").replace(/\u2212/g,'-');
+  if(fixed!==src.value){ src.value=fixed; syncEd(); }
+  const res=runMission(L, src.value, Date.now());
+  if(window.innerWidth<1200) document.querySelector('.mapbox').scrollIntoView({behavior:'smooth',block:'start'});
+  lastRun=res; errLine=res.err&&res.err.line>0?res.err.line:null; syncEd();
+  $('#con').innerHTML=''; conLine('l','Спроба №'+pr.tries+'. Зліт…');
+  if(res.err) conLine('e','Помилка в коді'+(errLine?' (рядок '+errLine+')':'')+': '+res.err.msg);
+  play(res);
+}
+
+/* ---------- відтворення ---------- */
+function stopPlay(){ if(playing){ cancelAnimationFrame(playing.raf); playing=null; } $('#runBtn').disabled=false; }
+function play(res){
+  const fr=res.sim.frames, T=fr[fr.length-1].t; let ph=0, logI=0, last=performance.now(), fi=0;
+  const logs=res.sim.logs.slice().sort((a,b)=>a.t-b.t);
+  $('#runBtn').disabled=true;
+  playing={res, raf:0, skip:false};
+  const step=(now)=>{
+    if(!playing) return;
+    const dt=Math.min(0.1,(now-last)/1000); last=now; ph+=dt*speedMul; if(playing.skip) ph=T;
+    if(ph>=T) ph=T;
+    while(fi<fr.length-2 && fr[fi+1].t<=ph) fi++;
+    const a=fr[fi], b=fr[Math.min(fi+1,fr.length-1)]; const k=b.t>a.t?Math.min(1,(ph-a.t)/(b.t-a.t)):1;
+    const f=ph>=T?Object.assign({},fr[fr.length-1],{t:ph}):{x:a.x+(b.x-a.x)*k, y:a.y+(b.y-a.y)*k, alt:a.alt+(b.alt-a.alt)*k, hd:lerpAng(a.hd,b.hd,k), bat:a.bat+(b.bat-a.bat)*k, air:a.air||b.air, t:ph};
+    while(logI<logs.length && logs[logI].t<=ph){ conLine(logs[logI].k, logs[logI].text, logs[logI].t); logI++; }
+    setHud(f); drawMap(f, res, ph); drawProf(res, ph);
+    if(ph>=T){ playing=null; $('#runBtn').disabled=false; finish(res); return; }
+    playing.raf=requestAnimationFrame(step);
+  };
+  playing.raf=requestAnimationFrame(step);
+}
+function lerpAng(a,b,k){ let d=((b-a+540)%360)-180; return (a+d*k+360)%360; }
+function setHud(f){
+  $('#hAlt').textContent=f.alt.toFixed(1); $('#hBat').textContent=f.bat.toFixed(1); $('#hT').textContent=(f.t||0).toFixed(1); $('#hHd').textContent=Math.round(f.hd);
+  $('#hBatW').classList.toggle('lowb', f.bat<15);
+  const st=$('#stat'); st.textContent=f.air?'У ПОВІТРІ':'НА ЗЕМЛІ'; st.classList.toggle('fly',!!f.air);
+}
+function finish(res){
+  const L=LEVELS[cur], s=res.sim; const pr=prog.levels[L.id];
+  let html='';
+  if(res.ok){
+    const gain=Math.max(0,res.stars-(pr.stars||0))*100; if(res.stars>(pr.stars||0)){ pr.stars=res.stars; } saveProg(); renderList();
+    conLine('o','Місію виконано! Час '+s.t.toFixed(1)+' с, заряд '+s.bat.toFixed(1)+' %.');
+    html='<p class="eyebrow">Місію виконано</p><h2>'+esc(L.title)+'</h2><div class="bigstars">'+'★'.repeat(res.stars)+'<span class="off">'+'★'.repeat(3-res.stars)+'</span></div>'+
+      '<div class="blist"><div class="y">✓ Основне завдання</div>'+res.bonus.map(b=>'<div class="'+(b.ok?'y':'x')+'">'+(b.ok?'✓':'○')+' '+esc(b.label)+'</div>').join('')+'</div>'+
+      '<p style="margin:0;color:var(--dim)">Час '+s.t.toFixed(1)+' с · заряд '+s.bat.toFixed(1)+' % · команд '+s.cmds+(L.id==='l7'?' · покриття '+coverage(s).toFixed(0)+' %':'')+(gain?' · <b style="color:var(--sig)">+'+gain+' XP</b>':'')+'</p>'+
+      '<div class="mrow"><button class="btn" data-a="close">Покращити</button>'+(cur<LEVELS.length-1?'<button class="btn pri" data-a="next">Наступна місія →</button>':'')+'</div>';
+  } else {
+    const why=s.dead?s.dead.msg:res.verdict; const kind=s.dead?s.dead.kind:'goal';
+    const title={crash:'Аварія',violation:'Порушення',error:'Збій команди',code:'Помилка в програмі',limit:'Зупинено симулятор',goal:'Місію не виконано'}[kind];
+    if(kind!=='code') conLine('e',title+': '+why);
+    if(s.person && kind!=='code') conLine('l','Людина була в точці ('+s.person.x.toFixed(0)+', '+s.person.y.toFixed(0)+'). Позначено на карті сірим.');
+    html='<p class="eyebrow" style="color:var(--red)">'+title+'</p><h2>Спробуйте ще</h2><p class="fail" style="margin:0;line-height:1.5">'+esc(why)+'</p>'+
+      '<p style="margin:0;color:var(--dim);line-height:1.5">Подивіться на траєкторію й консоль. '+(pr.tries>=3?'Можна відкрити еталонне рішення.':'Після 3 спроб відкриється еталонне рішення.')+'</p>'+
+      '<div class="mrow"><button class="btn" data-a="hint">Підказка</button><button class="btn pri" data-a="close">До коду</button></div>';
+  }
+  openModal(html,{next:()=>selectLevel(cur+1), hint:()=>conLine('w','Підказка: '+L.hint)});
+  renderBrief();
+}
+function openModal(html,acts){ $('#mcard').innerHTML=html; $('#modal').classList.add('on'); $('#mcard').querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{ $('#modal').classList.remove('on'); const f=acts&&acts[b.dataset.a]; if(f) f(); }); }
+$('#modal').onclick=e=>{ if(e.target.id==='modal') $('#modal').classList.remove('on'); };
+function confirmBox(text,yes){ openModal('<h2 style="font-size:20px">Підтвердження</h2><p style="margin:0;color:var(--dim);line-height:1.5">'+esc(text)+'</p><div class="mrow"><button class="btn" data-a="close">Скасувати</button><button class="btn pri" data-a="yes">Так</button></div>',{yes}); }
+
+/* ---------- карта ---------- */
+let U=1;
+const map=$('#map'), mx=map.getContext('2d');
+function sizeCanvas(c,h){ const r=c.getBoundingClientRect(); const d=window.devicePixelRatio||1; const w=Math.round(r.width*d), hh=Math.round((h?h:r.width)*d); if(c.width!==w||c.height!==hh){ c.width=w; c.height=hh; } return d; }
+let lastDraw=[];
+function drawMap(f,res,ph){
+  lastDraw=[f,res,ph];
+  if(!map.offsetParent) return;
+  sizeCanvas(map); const W=map.width, s=W/WORLD; U=W/520; const _u=0, X=x=>x*s, Y=y=>(WORLD-y)*s;
+  const L=LEVELS[cur], S=(res?res.sim.S:(previewSim?previewSim.S:L.setup));
+  mx.fillStyle='#0B1620'; mx.fillRect(0,0,W,W);
+  // рельєф
+  mx.save(); mx.globalAlpha=.5; mx.strokeStyle='#122636'; mx.lineWidth=1.2*U;
+  for(let k=0;k<7;k++){ mx.beginPath(); for(let a=0;a<=64;a++){ const t=a/64*Math.PI*2; const r=(18+k*16)*(1+0.12*Math.sin(3*t+k)); const px=140+Math.cos(t)*r*1.2, py=60+Math.sin(t)*r*0.8; a?mx.lineTo(X(px),Y(py)):mx.moveTo(X(px),Y(py)); } mx.stroke(); }
+  mx.restore();
+  // сітка
+  for(let g=0; g<=WORLD; g+=10){ mx.strokeStyle=g%50===0?'#1E3449':'#132636'; mx.lineWidth=g%50===0?1.5:1; mx.beginPath(); mx.moveTo(X(g),0); mx.lineTo(X(g),W); mx.moveTo(0,Y(g)); mx.lineTo(W,Y(g)); mx.stroke(); }
+  mx.fillStyle='#3E5A72'; mx.font=(10*U|0)+'px JetBrains Mono, monospace';
+  for(let g=50; g<WORLD; g+=50){ mx.fillText(g, X(g)+4, W-6); mx.fillText(g, 4, Y(g)-4); }
+  // ліс
+  if(S.forest){ const F=S.forest; mx.fillStyle='rgba(60,120,80,.18)'; mx.fillRect(X(F.x),Y(F.y+F.h),F.w*s,F.h*s);
+    const r=mkRng(42); mx.fillStyle='rgba(90,160,110,.28)'; for(let i=0;i<140;i++){ const tx=F.x+r()*F.w, ty=F.y+r()*F.h; mx.beginPath(); mx.arc(X(tx),Y(ty),(2+r()*3)*s,0,7); mx.fill(); } }
+  // поле
+  if(S.area){ const A=S.area; mx.fillStyle='rgba(143,211,193,.07)'; mx.fillRect(X(A.x),Y(A.y+A.h),A.w*s,A.h*s); mx.setLineDash([6,6]); mx.strokeStyle='#8FD3C1'; mx.lineWidth=2; mx.strokeRect(X(A.x),Y(A.y+A.h),A.w*s,A.h*s); mx.setLineDash([]); }
+  // зони спостереження
+  for(const z of (S.zones||[])){ mx.fillStyle='rgba(245,196,81,.07)'; mx.fillRect(X(z.x),Y(z.y+z.h),z.w*s,z.h*s); mx.setLineDash([10,6]); mx.strokeStyle='#F5C451'; mx.lineWidth=2; mx.strokeRect(X(z.x),Y(z.y+z.h),z.w*s,z.h*s); mx.setLineDash([]); label(mx,'висота ≥ '+z.min+' м',X(z.x+z.w/2),Y(z.y)-10*U,'#F5C451',s); }
+  // заборонені зони
+  for(const z of S.nofly){ mx.save(); mx.beginPath(); mx.arc(X(z.x),Y(z.y),z.r*s,0,7); mx.fillStyle='rgba(255,90,106,.12)'; mx.fill(); mx.clip();
+    mx.strokeStyle='rgba(255,90,106,.45)'; mx.lineWidth=2; for(let k=-W;k<W*2;k+=12*U*2){ mx.beginPath(); mx.moveTo(k,0); mx.lineTo(k-W,W); mx.stroke(); } mx.restore();
+    mx.beginPath(); mx.arc(X(z.x),Y(z.y),z.r*s,0,7); mx.strokeStyle='#FF5A6A'; mx.lineWidth=2; mx.stroke(); }
+  // вежі
+  for(const w of S.towers){ mx.fillStyle='#1E3449'; mx.beginPath(); mx.arc(X(w.x),Y(w.y),w.r*s,0,7); mx.fill(); mx.strokeStyle='#EEF1EA'; mx.lineWidth=2.5; mx.stroke();
+    mx.beginPath(); mx.moveTo(X(w.x)-w.r*s*.6,Y(w.y)); mx.lineTo(X(w.x)+w.r*s*.6,Y(w.y)); mx.moveTo(X(w.x),Y(w.y)-w.r*s*.6); mx.lineTo(X(w.x),Y(w.y)+w.r*s*.6); mx.stroke();
+    label(mx, w.h+' м', X(w.x), Y(w.y)-w.r*s-8*U, '#EEF1EA', s); }
+  // знімки
+  if(res){ for(const p of res.sim.photos){ if(p.t>ph) break; mx.beginPath(); mx.arc(X(p.x),Y(p.y),p.r*s,0,7); mx.fillStyle=p.bad?'rgba(245,196,81,.10)':'rgba(143,211,193,.16)'; mx.fill(); mx.strokeStyle=p.bad?'rgba(245,196,81,.5)':'rgba(143,211,193,.55)'; mx.lineWidth=1; mx.stroke(); } }
+  // точки маршруту
+  const pts=(S.points||[]).map((p,i)=>({p,i,kind:'cp'})).concat((S.route||[]).map((p,i)=>({p,i,kind:'rt'})));
+  for(const {p,i,kind} of pts){
+    let done=false; if(res){ if(kind==='cp') done=res.sim.frames.some(fr=>fr.t<=ph&&fr.air&&dist(fr,p)<6); else done=res.sim.photos.some(f=>f.t<=ph&&dist(f,p)<6); }
+    mx.beginPath(); mx.arc(X(p.x),Y(p.y),7*U*1.3,0,7); mx.fillStyle=done?'#7BE0A2':'#0B1620'; mx.fill(); mx.strokeStyle=done?'#7BE0A2':'#EEF1EA'; mx.lineWidth=2; mx.stroke();
+    mx.fillStyle=done?'#0B1620':'#EEF1EA'; mx.font='600 '+(9*U|0)+'px JetBrains Mono, monospace'; mx.textAlign='center'; mx.textBaseline='middle'; mx.fillText(i+1,X(p.x),Y(p.y)+1); mx.textAlign='left'; mx.textBaseline='alphabetic';
+  }
+  // ціль
+  if(S.target){ const t=S.target; mx.beginPath(); mx.arc(X(t.x),Y(t.y),9*U*1.4,0,7); mx.fillStyle='#132433'; mx.fill(); mx.strokeStyle='#8FD3C1'; mx.lineWidth=3; mx.stroke();
+    mx.fillStyle='#8FD3C1'; mx.font='700 '+(11*U|0)+'px Unbounded, sans-serif'; mx.textAlign='center'; mx.textBaseline='middle'; mx.fillText(t.label||'B',X(t.x),Y(t.y)+1); mx.textAlign='left'; mx.textBaseline='alphabetic'; }
+  // старт
+  const h=S.home; mx.beginPath(); mx.arc(X(h.x),Y(h.y),9*U*1.4,0,7); mx.fillStyle='#FF6B2C'; mx.fill();
+  mx.fillStyle='#0E1A24'; mx.font='700 '+(11*U|0)+'px Unbounded, sans-serif'; mx.textAlign='center'; mx.textBaseline='middle'; mx.fillText('H',X(h.x),Y(h.y)+1); mx.textAlign='left'; mx.textBaseline='alphabetic';
+  // скани
+  if(res){ for(const sc of res.sim.scans){ if(sc.t>ph) break; mx.beginPath(); mx.arc(X(sc.x),Y(sc.y),18*s,0,7); mx.strokeStyle='rgba(201,167,255,.18)'; mx.lineWidth=1; mx.stroke(); } }
+  // траєкторія
+  if(res){ const fr=res.sim.frames; mx.lineWidth=2.5*U*1.2; mx.lineCap='round'; mx.lineJoin='round';
+    mx.beginPath(); let started=false; for(const p of fr){ if(p.t>ph) break; if(!p.air&&!started) continue; if(!started){ mx.moveTo(X(p.x),Y(p.y)); started=true; } else mx.lineTo(X(p.x),Y(p.y)); }
+    if(started&&f) mx.lineTo(X(f.x),Y(f.y)); mx.strokeStyle='#FF6B2C'; mx.stroke();
+    for(const p of fr){ if(p.t>ph) break; if(p.ev==='deliver'){ ring(X(p.x),Y(p.y),'#7BE0A2',s); } }
+  }
+  // позначки
+  if(res){ for(const m of res.sim.marks){ if(m.t>ph) break; flag(X(m.x),Y(m.y),s); } }
+  // людина (після завершення)
+  if(res && res.sim.person && ph>=res.sim.frames[res.sim.frames.length-1].t){ const p=res.sim.person; const found=res.sim.marks.some(m=>dist(m,p)<19); mx.beginPath(); mx.arc(X(p.x),Y(p.y),5*U*1.3,0,7); mx.fillStyle=found?'#C9A7FF':'#6F8A9C'; mx.fill(); label(mx,found?'знайдено':'людина тут',X(p.x),Y(p.y)-12*U,found?'#C9A7FF':'#9FB3C1',s); }
+  // дрон
+  const d=f||(previewSim?previewSim.frames[0]:null); if(d) drone(X(d.x),Y(d.y),d.alt,d.hd,s, res&&res.sim.dead&&ph>=res.sim.frames[res.sim.frames.length-1].t?res.sim.dead.kind:null);
+}
+function label(c,t,x,y,col,s){ c.font='600 '+(9*U|0)+'px JetBrains Mono, monospace'; c.textAlign='center'; c.fillStyle='rgba(8,18,26,.8)'; const w=c.measureText(t).width+10; c.fillRect(x-w/2,y-9*U,w,12*U); c.fillStyle=col; c.fillText(t,x,y); c.textAlign='left'; }
+function ring(x,y,col,s){ mx.beginPath(); mx.arc(x,y,6*s,0,7); mx.strokeStyle=col; mx.lineWidth=2; mx.stroke(); }
+function flag(x,y,s){ mx.strokeStyle='#C9A7FF'; mx.lineWidth=2; mx.beginPath(); mx.moveTo(x,y); mx.lineTo(x,y-16*U*1.5); mx.stroke(); mx.fillStyle='#C9A7FF'; mx.beginPath(); mx.moveTo(x,y-16*U*1.5); mx.lineTo(x+10*U*1.5,y-12*U*1.5); mx.lineTo(x,y-8*U*1.5); mx.fill(); }
+function drone(x,y,alt,hd,s,dead){
+  const sc=U*(1+alt/160)*1.25, off=alt*s*0.12;
+  mx.beginPath(); mx.ellipse(x+off*0.5,y+off*0.3,14*sc,10*sc,0,0,7); mx.fillStyle='rgba(0,0,0,.35)'; mx.fill();
+  mx.save(); mx.translate(x,y-off); mx.rotate(hd*Math.PI/180);
+  if(dead==='crash'){ mx.strokeStyle='#FF5A6A'; mx.lineWidth=3; mx.beginPath(); mx.moveTo(-12*sc,-12*sc); mx.lineTo(12*sc,12*sc); mx.moveTo(12*sc,-12*sc); mx.lineTo(-12*sc,12*sc); mx.stroke(); mx.restore(); return; }
+  mx.strokeStyle='#EEF1EA'; mx.lineWidth=3*sc; mx.lineCap='round'; mx.beginPath(); mx.moveTo(-11*sc,-11*sc); mx.lineTo(11*sc,11*sc); mx.moveTo(11*sc,-11*sc); mx.lineTo(-11*sc,11*sc); mx.stroke();
+  const tt=performance.now()/60;
+  for(const [px,py] of [[-11,-11],[11,-11],[-11,11],[11,11]]){ mx.beginPath(); mx.arc(px*sc,py*sc,7*sc,0,7); mx.fillStyle='rgba(255,107,44,.18)'; mx.fill(); mx.strokeStyle='#FF6B2C'; mx.lineWidth=1.2; mx.stroke();
+    if(alt>0.1){ mx.save(); mx.translate(px*sc,py*sc); mx.rotate(tt); mx.strokeStyle='rgba(238,241,234,.7)'; mx.lineWidth=1.5; mx.beginPath(); mx.moveTo(-6*sc,0); mx.lineTo(6*sc,0); mx.stroke(); mx.restore(); } }
+  mx.fillStyle='#FF6B2C'; mx.beginPath(); mx.roundRect?mx.roundRect(-4.5*sc,-7*sc,9*sc,14*sc,3*sc):mx.rect(-4.5*sc,-7*sc,9*sc,14*sc); mx.fill();
+  mx.fillStyle='#EEF1EA'; mx.beginPath(); mx.moveTo(0,-13*sc); mx.lineTo(-3.5*sc,-8*sc); mx.lineTo(3.5*sc,-8*sc); mx.fill();
+  mx.restore();
+}
+/* профіль висоти й батареї */
+const prof=$('#prof'), px=prof.getContext('2d');
+function drawProf(res,ph){
+  if(!prof.offsetParent) return;
+  sizeCanvas(prof,80); const W=prof.width,H=prof.height,d=window.devicePixelRatio||1;
+  px.fillStyle='#0B1620'; px.fillRect(0,0,W,H);
+  px.fillStyle='#3E5A72'; px.font=(10*d)+'px JetBrains Mono, monospace'; px.fillText('ВИСОТА',8*d,14*d); px.fillStyle='#8FD3C1'; px.fillText('БАТАРЕЯ',70*d,14*d);
+  if(!res) return; const fr=res.sim.frames, T=Math.max(1,fr[fr.length-1].t), mA=Math.max(30,res.sim.maxAlt);
+  const XX=t=>t/T*(W-16*d)+8*d, YA=a=>H-6*d-a/mA*(H-26*d), YB=b=>H-6*d-b/100*(H-26*d);
+  for(const [key,col,fn,a] of [['alt','#FF6B2C',YA,1],['bat','#8FD3C1',YB,1]]){
+    px.beginPath(); fr.forEach((p,i)=>{ const x=XX(p.t), y=fn(p[key]); i?px.lineTo(x,y):px.moveTo(x,y); }); px.strokeStyle=col; px.globalAlpha=.25; px.lineWidth=1.5*d; px.stroke();
+    px.beginPath(); let first=true; for(const p of fr){ if(p.t>ph) break; const x=XX(p.t), y=fn(p[key]); first?px.moveTo(x,y):px.lineTo(x,y); first=false; } px.globalAlpha=1; px.lineWidth=2*d; px.stroke();
+  }
+  px.strokeStyle='#EEF1EA'; px.lineWidth=1*d; px.beginPath(); px.moveTo(XX(ph),18*d); px.lineTo(XX(ph),H); px.stroke();
+}
+window.addEventListener('resize',()=>{ drawMap(...lastDraw); drawProf(lastDraw[1],lastDraw[2]); drawPID(); });
+
+/* ===================== PID ===================== */
+const CHAL=[
+  {id:'c1', name:'Плавний зліт', desc:'Без вантажу й вітру.', opt:{}, goals:{over:10,settle:5,err:0.3}},
+  {id:'c2', name:'Вантаж і порив вітру', desc:'Вантаж +300 г, на 6-й секунді порив униз.', opt:{payload:1,gust:1}, goals:{over:15,err:0.3,gust:3}},
+  {id:'c3', name:'Шумний датчик', desc:'Барометр тремтить ±0,25 м. Мотори не мають «дергатися».', opt:{noise:1}, goals:{over:12,settle:6,err:0.3,sd:5.5}}
+];
+let chal=0, pidRes=null, pidAnim=0;
+function simPID(kp,ki,kd,o){
+  const m=o.payload?1.3:1.0, m0=1.0, g=9.81, dt=0.005, T=12, target=20, cdt=0.02;
+  let z=0,v=0,I=0,prev=null,dF=0,u=m0*g,acc=0; const rnd=mkRng(7);
+  const out=[]; let maxZ=0, gustMax=0;
+  for(let i=0;i<=T/dt;i++){ const t=i*dt; acc+=dt;
+    if(acc>=cdt-1e-9){ acc=0; const meas=z+(o.noise?(rnd()-0.5)*0.5:0); const e=target-meas;
+      if(Math.abs(e)<4) I+=e*cdt; I=Math.max(-15,Math.min(15,I));
+      const de=prev===null?0:(e-prev)/cdt; prev=e; dF=dF+0.35*(de-dF);
+      u=m0*g+kp*e+ki*I+kd*dF; u=Math.max(0,Math.min(2.6*m0*g,u)); }
+    let F=u-m*g-0.25*v; if(o.gust&&t>=6&&t<7.5) F-=7;
+    v+=F/m*dt; z+=v*dt; if(z<0){ z=0; if(v<0) v=0; }
+    maxZ=Math.max(maxZ,z); if(t>=6) gustMax=Math.max(gustMax,Math.abs(z-target));
+    if(i%4===0) out.push({t,z,u}); }
+  let settle=0; for(const p of out){ if(Math.abs(p.z-target)>1) settle=p.t; }
+  const last=out.filter(p=>p.t>11); const err=Math.abs(last.reduce((s,p)=>s+p.z,0)/last.length-target);
+  const lu=out.filter(p=>p.t>9).map(p=>p.u); const mu=lu.reduce((a,b)=>a+b,0)/lu.length; const sd=Math.sqrt(lu.reduce((s,x)=>s+(x-mu)**2,0)/lu.length);
+  return {out, over:Math.max(0,(maxZ-target)/target*100), settle, err, gust:gustMax, sd};
+}
+const kp=$('#kp'),ki=$('#ki'),kd=$('#kd');
+[kp,ki,kd].forEach(r=>r.oninput=()=>pidUpdate(true));
+function renderChal(){ $('#chal').innerHTML=CHAL.map((c,i)=>'<button class="'+(i===chal?'on':'')+'" data-i="'+i+'"><b>'+(i+1)+'. '+c.name+'</b><span class="s">'+c.desc+'</span>'+(prog.pid[c.id]?'<span class="d">✓ виконано · +150 XP</span>':'')+'</button>').join(''); document.querySelectorAll('#chal button').forEach(b=>b.onclick=()=>{ chal=+b.dataset.i; renderChal(); pidUpdate(true); }); }
+function pidEval(r,G){ const rows=[];
+  rows.push({k:'ПЕРЕРЕГУЛЮВАННЯ',v:r.over.toFixed(1)+' %',g:'< '+G.over+' %',ok:r.over<G.over});
+  if(G.settle) rows.push({k:'ВСТАНОВЛЕННЯ',v:r.settle>=11.9?'> 12 с':r.settle.toFixed(1)+' с',g:'< '+G.settle+' с',ok:r.settle<G.settle});
+  rows.push({k:'СТАЛА ПОХИБКА',v:r.err.toFixed(2)+' м',g:'< '+G.err+' м',ok:r.err<G.err});
+  if(G.gust) rows.push({k:'ПРОСІДАННЯ ВІД ПОРИВУ',v:r.gust.toFixed(1)+' м',g:'< '+G.gust+' м',ok:r.gust<G.gust});
+  if(G.sd) rows.push({k:'ТРЕМТІННЯ ТЯГИ',v:r.sd.toFixed(1)+' Н',g:'< '+G.sd+' Н',ok:r.sd<G.sd});
+  return rows; }
+function pidUpdate(anim){
+  $('#kpv').textContent=(+kp.value).toFixed(1); $('#kiv').textContent=(+ki.value).toFixed(2); $('#kdv').textContent=(+kd.value).toFixed(1);
+  const C=CHAL[chal]; pidRes=simPID(+kp.value,+ki.value,+kd.value,C.opt); const rows=pidEval(pidRes,C.goals);
+  $('#mets').innerHTML=rows.map(r=>'<div class="met '+(r.ok?'ok':'bad')+'"><div class="k">'+r.k+'</div><div class="v">'+r.v+'</div><div class="g">мета '+r.g+'</div></div>').join('');
+  const r=pidRes; let tip='';
+  if(r.over>30) tip='Сильне перерегулювання: дрон «проскакує» висоту. Додайте Kd, щоб гальмувати заздалегідь, або зменште Kp.';
+  else if(r.sd>8) tip='Мотори тремтять: Kd підсилює шум датчика. Зменште Kd і Kp.';
+  else if(r.err>0.3) tip='Дрон не дотягує до 20 м — стала похибка. Саме для цього потрібна складова Ki.';
+  else if(r.settle>8) tip='Довго встановлюється. Спробуйте трохи збільшити Kp.';
+  else tip='Добрий відгук. Натисніть «Перевірити налаштування».';
+  $('#pidtip').textContent=tip;
+  pidAnim=anim?performance.now():0; drawPID();
+}
+const pc=$('#pidc'), pcx=pc.getContext('2d');
+function drawPID(){
+  if(!pc.offsetParent||!pidRes) return;
+  const d=window.devicePixelRatio||1; const r=pc.getBoundingClientRect(); const W=Math.round(r.width*d), H=Math.round(r.width*9/16*d); if(pc.width!==W||pc.height!==H){ pc.width=W; pc.height=H; }
+  const L=50*d, R=W-16*d, T=20*d, B=H-36*d, XX=t=>L+t/12*(R-L), YY=z=>B-z/35*(B-T);
+  pcx.fillStyle='#0B1620'; pcx.fillRect(0,0,W,H);
+  pcx.font=(11*d)+'px JetBrains Mono, monospace'; pcx.fillStyle='#3E5A72';
+  for(let z=0;z<=35;z+=5){ pcx.strokeStyle='#132636'; pcx.beginPath(); pcx.moveTo(L,YY(z)); pcx.lineTo(R,YY(z)); pcx.stroke(); pcx.fillText(z+' м',6*d,YY(z)+4*d); }
+  for(let t=0;t<=12;t+=2){ pcx.fillText(t+' с',XX(t)-8*d,H-12*d); }
+  pcx.fillStyle='rgba(123,224,162,.10)'; pcx.fillRect(L,YY(21),R-L,YY(19)-YY(21));
+  pcx.setLineDash([8*d,6*d]); pcx.strokeStyle='#8FD3C1'; pcx.lineWidth=1.5*d; pcx.beginPath(); pcx.moveTo(L,YY(20)); pcx.lineTo(R,YY(20)); pcx.stroke(); pcx.setLineDash([]);
+  if(CHAL[chal].opt.gust){ pcx.fillStyle='rgba(255,90,106,.10)'; pcx.fillRect(XX(6),T,XX(7.5)-XX(6),B-T); pcx.fillStyle='#FF5A6A'; pcx.fillText('порив',XX(6)+4*d,T+14*d); }
+  const prog01=pidAnim?Math.min(1,(performance.now()-pidAnim)/1400):1; const tMax=prog01*12;
+  pcx.beginPath(); let last=null; for(const p of pidRes.out){ if(p.t>tMax) break; const x=XX(p.t), y=YY(Math.min(35,p.z)); last?pcx.lineTo(x,y):pcx.moveTo(x,y); last=p; }
+  pcx.strokeStyle='#FF6B2C'; pcx.lineWidth=3*d; pcx.lineJoin='round'; pcx.stroke();
+  if(last){ pcx.beginPath(); pcx.arc(XX(last.t),YY(Math.min(35,last.z)),5*d,0,7); pcx.fillStyle='#FF6B2C'; pcx.fill();
+    const tw=$('#tower'); if(tw.offsetParent){ const h=tw.clientHeight-20; $('#tdr').style.bottom=(20+Math.min(35,last.z)/35*(h-30))+'px'; $('#ttgt').style.bottom=(20+20/35*(h-30)+12)+'px'; } }
+  if(prog01<1) requestAnimationFrame(drawPID);
+}
+$('#pidCheck').onclick=()=>{
+  const C=CHAL[chal], rows=pidEval(pidRes,C.goals), ok=rows.every(r=>r.ok);
+  if(ok){ const first=!prog.pid[C.id]; prog.pid[C.id]={kp:+kp.value,ki:+ki.value,kd:+kd.value}; saveProg(); renderChal();
+    openModal('<p class="eyebrow">Випробування пройдено</p><h2>'+C.name+'</h2><p style="margin:0;color:var(--dim);line-height:1.5">Kp = '+(+kp.value).toFixed(1)+', Ki = '+(+ki.value).toFixed(2)+', Kd = '+(+kd.value).toFixed(1)+(first?'<br><b style="color:var(--sig)">+150 XP</b>':'')+'</p><div class="mrow">'+(chal<CHAL.length-1?'<button class="btn pri" data-a="nx">Наступне випробування</button>':'<button class="btn pri" data-a="close">Готово</button>')+'</div>',{nx:()=>{ chal++; renderChal(); pidUpdate(true); }}); }
+  else { const bad=rows.filter(r=>!r.ok).map(r=>r.k.toLowerCase()).join(', '); toast('Ще ні: '+bad); }
+};
+
+/* ===================== ЗБЕРИ ДРОН ===================== */
+const PARTS=[
+  {n:'Рама', x:225,y:225, d:'Каркас, що тримає всі вузли й гасить вібрації.'},
+  {n:'Мотор BLDC', x:150,y:150, d:'Безщітковий мотор: тисячі обертів за хвилину.'},
+  {n:'Пропелер', x:470,y:80, d:'Створює тягу. Сусідні обертаються в різні боки.'},
+  {n:'Регулятор ESC', x:395,y:395, d:'Перетворює команду контролера на струм для мотора.'},
+  {n:'Польотний контролер', x:300,y:280, d:'Мозок дрона: датчики, процесор, автопілот.'},
+  {n:'Батарея LiPo', x:300,y:340, d:'Джерело енергії і найважча частина.'},
+  {n:'GNSS і компас', x:300,y:425, d:'Координати і курс. Винесені подалі від струмів.'},
+  {n:'Приймач RC', x:222,y:300, d:'Приймає команди з пульта пілота.'},
+  {n:'Модем телеметрії', x:378,y:300, d:'Двобічний зв’язок з наземною станцією.'},
+  {n:'Камера', x:300,y:192, d:'Корисне навантаження: відео, фото, тепловізор.'}
+];
+let bState=null;
+function buildStart(){
+  bState={sel:null, placed:new Set(), score:0, t0:null, timer:null, done:false};
+  const order=PARTS.map((p,i)=>i).sort(()=>Math.random()-0.5);
+  $('#parts').innerHTML=order.map(i=>'<button class="part" data-i="'+i+'">'+PARTS[i].n+'</button>').join('');
+  document.querySelectorAll('.part').forEach(b=>b.onclick=()=>{ if(!bState.t0){ bState.t0=Date.now(); bState.timer=setInterval(()=>{ $('#bTime').textContent=Math.floor((Date.now()-bState.t0)/1000)+' с'; },250); } bState.sel=+b.dataset.i; document.querySelectorAll('.part').forEach(x=>x.classList.toggle('sel',x===b)); $('#bInfo').textContent=PARTS[bState.sel].d+' Куди ставимо?'; });
+  $('#bScore').textContent='0'; $('#bTime').textContent='0 с'; $('#bBest').textContent=prog.build?prog.build:'—'; $('#bInfo').textContent='Оберіть першу деталь.';
+  drawBuild();
+}
+function drawBuild(){
+  const B=document.getElementById('bsvg');
+  let g='<rect width="600" height="600" rx="24" fill="#0B1620"/><path d="M300 300 L150 150 M300 300 L450 150 M300 300 L150 450 M300 300 L450 450" stroke="#2A4257" stroke-width="14" stroke-linecap="round"/>'+
+    '<g fill="none" stroke="#2A4257" stroke-width="3" stroke-dasharray="6 10"><circle cx="150" cy="150" r="105"/><circle cx="450" cy="150" r="105"/><circle cx="150" cy="450" r="105"/><circle cx="450" cy="450" r="105"/></g>'+
+    '<g fill="#15283A" stroke="#33526F" stroke-width="5"><circle cx="150" cy="150" r="28"/><circle cx="450" cy="150" r="28"/><circle cx="150" cy="450" r="28"/><circle cx="450" cy="450" r="28"/></g>'+
+    '<rect x="255" y="210" width="90" height="170" rx="22" fill="#15283A" stroke="#33526F" stroke-width="5"/>';
+  PARTS.forEach((p,i)=>{ const done=bState.placed.has(i);
+    g+='<g class="slot" data-i="'+i+'"><circle cx="'+p.x+'" cy="'+p.y+'" r="22" fill="'+(done?'#FF6B2C':'rgba(255,107,44,.12)')+'" stroke="#FF6B2C" stroke-width="2" '+(done?'':'stroke-dasharray="4 4"')+'/>'+
+      (done?'<text x="'+p.x+'" y="'+(p.y+5)+'" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="15" font-weight="600" fill="#0E1A24">✓</text>':'<text x="'+p.x+'" y="'+(p.y+5)+'" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="15" fill="#FF6B2C">?</text>')+'</g>';
+    if(done) g+='<text x="'+(p.x)+'" y="'+(p.y-30)+'" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="15" font-weight="600" fill="#EEF1EA" paint-order="stroke" stroke="#0B1620" stroke-width="5">'+p.n+'</text>';
+  });
+  B.innerHTML=g;
+  B.querySelectorAll('.slot').forEach(el=>el.onclick=()=>placePart(+el.dataset.i, el));
+}
+function placePart(i,el){
+  if(!bState||bState.done) return; if(bState.sel===null){ $('#bInfo').textContent='Спершу оберіть деталь зі списку.'; return; }
+  if(bState.placed.has(i)) return;
+  if(i===bState.sel){ bState.placed.add(i); bState.score+=20; document.querySelector('.part[data-i="'+i+'"]').classList.add('done'); bState.sel=null; document.querySelectorAll('.part').forEach(x=>x.classList.remove('sel')); $('#bInfo').textContent='Правильно! '+PARTS[i].n+' на місці.'; }
+  else { bState.score=Math.max(0,bState.score-5); el.classList.add('shake'); setTimeout(()=>el.classList.remove('shake'),400); $('#bInfo').textContent='Ні, тут не '+PARTS[bState.sel].n.toLowerCase()+'. −5'; }
+  $('#bScore').textContent=bState.score; drawBuild();
+  if(bState.placed.size===PARTS.length){ bState.done=true; clearInterval(bState.timer); const sec=Math.floor((Date.now()-bState.t0)/1000); const bonus=Math.max(0,120-sec); const tot=bState.score+bonus; const best=tot>(prog.build||0); if(best){ prog.build=tot; saveProg(); }
+    openModal('<p class="eyebrow">Дрон зібрано</p><h2>'+tot+' балів</h2><p style="margin:0;color:var(--dim);line-height:1.5">За деталі: '+bState.score+' · бонус за час ('+sec+' с): '+bonus+(best?'<br><b style="color:var(--sig)">Новий рекорд!</b>':'')+'</p><div class="mrow"><button class="btn" data-a="close">Закрити</button><button class="btn pri" data-a="again">Ще раз</button></div>',{again:buildStart}); $('#bBest').textContent=prog.build; }
+}
+$('#bRestart').onclick=()=>{ if(bState&&bState.timer) clearInterval(bState.timer); buildStart(); };
+
+
+/* ===================== РОЗПІЗНАЙ БПЛА ===================== */
+const SIL={
+ shahed:'<path d="M150 25 L265 150 L190 140 L150 165 L110 140 L35 150 Z" fill="#EEF1EA"/><rect x="28" y="120" width="10" height="34" fill="#EEF1EA"/><rect x="262" y="120" width="10" height="34" fill="#EEF1EA"/><path d="M130 172 L170 172" stroke="#FF6B2C" stroke-width="5"/>',
+ recon:'<rect x="142" y="30" width="16" height="140" rx="8" fill="#EEF1EA"/><rect x="35" y="72" width="230" height="16" rx="6" fill="#EEF1EA"/><rect x="108" y="150" width="84" height="10" rx="4" fill="#EEF1EA"/><path d="M128 176 L172 176" stroke="#FF6B2C" stroke-width="5"/>',
+ loiter:'<rect x="40" y="92" width="220" height="16" rx="8" fill="#EEF1EA"/><path d="M80 60 L110 140 M110 60 L80 140" stroke="#EEF1EA" stroke-width="7" stroke-linecap="round"/><path d="M190 50 L230 150 M230 50 L190 150" stroke="#EEF1EA" stroke-width="7" stroke-linecap="round"/><circle cx="262" cy="100" r="7" fill="#FF6B2C"/>',
+ fpv:'<path d="M150 100 L100 50 M150 100 L200 50 M150 100 L100 150 M150 100 L200 150" stroke="#EEF1EA" stroke-width="8" stroke-linecap="round"/><g fill="none" stroke="#FF6B2C" stroke-width="3"><circle cx="100" cy="50" r="30"/><circle cx="200" cy="50" r="30"/><circle cx="100" cy="150" r="30"/><circle cx="200" cy="150" r="30"/></g><rect x="136" y="82" width="28" height="36" rx="6" fill="#EEF1EA"/><path d="M150 70 L142 82 L158 82 Z" fill="#FF6B2C"/>',
+ hexa:'<g stroke="#EEF1EA" stroke-width="7" stroke-linecap="round"><path d="M150 100 L150 25 M150 100 L215 62 M150 100 L215 138 M150 100 L150 175 M150 100 L85 138 M150 100 L85 62"/></g><g fill="none" stroke="#FF6B2C" stroke-width="3"><circle cx="150" cy="25" r="22"/><circle cx="215" cy="62" r="22"/><circle cx="215" cy="138" r="22"/><circle cx="150" cy="175" r="22"/><circle cx="85" cy="138" r="22"/><circle cx="85" cy="62" r="22"/></g><circle cx="150" cy="100" r="22" fill="#EEF1EA"/>',
+ sea:'<path d="M30 120 L230 120 L270 95 L60 95 Z" fill="#EEF1EA"/><rect x="150" y="78" width="40" height="17" rx="4" fill="#EEF1EA"/><path d="M20 140 Q45 128 70 140 T120 140 T170 140 T220 140 T270 140" fill="none" stroke="#8FD3C1" stroke-width="4"/><path d="M20 160 Q45 148 70 160 T120 160 T170 160 T220 160 T270 160" fill="none" stroke="#8FD3C1" stroke-width="3" opacity=".5"/>'
+};
+const RQ=[
+ ['shahed','Трикутне крило, кілі на кінцях, гвинт ззаду. Звук нагадує мопед.',['Далекобійний ударний (тип «Шахед»)','Розвідувальний літак','Морський дрон','FPV-дрон'],0,'Дельтаподібне крило і штовхальний гвинт — характерні ознаки далекобійних ударних дронів.'],
+ ['recon','Пряме довге крило, хвостове оперення, летить високо й довго кружляє.',['Важкий мультикоптер','Розвідувальний літак','Баражуючий боєприпас','FPV-дрон'],1,'Довге пряме крило дає тривалий політ — це потрібно для спостереження.'],
+ ['loiter','Два хрестоподібні крила одне за одним, вузький корпус.',['Баражуючий боєприпас','Морський дрон','Розвідувальний літак','Гексакоптер'],0,'X-подібні крила в тандемі типові для баражуючих боєприпасів.'],
+ ['fpv','Маленький квадрокоптер, камера дивиться вперед, оператор в окулярах.',['Далекобійний ударний','FPV-дрон','Розвідувальний літак','Морський дрон'],1,'FPV — first person view: пілот бачить «очима» дрона.'],
+ ['hexa','Шість гвинтів, великий корпус, часто працює вночі.',['FPV-дрон','Важкий мультикоптер','Баражуючий боєприпас','Розвідувальний літак'],1,'Шість-вісім моторів дають велику вантажопідйомність.'],
+ ['sea','Низький корпус без екіпажу, рухається по воді.',['Морський дрон','Розвідувальний літак','Важкий мультикоптер','FPV-дрон'],0,'Українські морські дрони змінили ситуацію в Чорному морі.']
+];
+const recog={};
+function recogIntro(){
+  $('#recog').innerHTML='<p class="eyebrow">Гра · Розпізнай БпЛА</p><h2 style="font-size:28px">6 силуетів — назвіть клас</h2><p style="margin:0;color:var(--dim);line-height:1.5">Дивіться на форму крила, кількість гвинтів і опис. Правильна відповідь — 20 балів, з першої спроби без підказки — ще +10. Рекорд: <b style="color:var(--sig)">'+(prog.recog||0)+'</b></p><div><button class="btn pri" id="rgo">Почати</button></div>';
+  $('#rgo').onclick=recogStart;
+}
+function recogStart(){ recog.list=RQ.map((q,i)=>i).sort(()=>Math.random()-0.5); recog.i=0; recog.score=0; recogQ(); }
+function recogQ(){
+  const q=RQ[recog.list[recog.i]]; recog.lock=false; recog.hint=false;
+  const opts=q[2].map((o,i)=>({o,i})).sort(()=>Math.random()-0.5);
+  $('#recog').innerHTML='<div class="qhead"><span>СИЛУЕТ '+(recog.i+1)+' / 6</span><span>БАЛИ <b style="color:var(--sig)">'+recog.score+'</b></span></div>'+
+   '<div style="display:flex;justify-content:center;background:#0B1620;border:1px solid var(--line);border-radius:14px;padding:18px"><svg viewBox="0 0 300 200" style="width:min(420px,100%)" aria-label="Силует безпілотника">'+SIL[q[0]]+'</svg></div>'+
+   '<p id="rh" style="margin:0;color:var(--dim);line-height:1.5"><button class="btn ghost" id="rhb" style="padding:6px 12px;font-size:13px">Показати опис (−10)</button></p>'+
+   '<div class="qopts">'+opts.map(x=>'<button class="qopt" data-i="'+x.i+'">'+esc(x.o)+'</button>').join('')+'</div><p class="qexp" id="rexp"></p><div id="rnext"></div>';
+  $('#rhb').onclick=()=>{ recog.hint=true; $('#rh').textContent=q[1]; };
+  document.querySelectorAll('#recog .qopt').forEach(b=>b.onclick=()=>recogAns(+b.dataset.i,q));
+}
+function recogAns(i,q){
+  if(recog.lock) return; recog.lock=true;
+  document.querySelectorAll('#recog .qopt').forEach(b=>{ const k=+b.dataset.i; if(k===q[3]) b.classList.add('ok'); else if(k===i) b.classList.add('no'); b.disabled=true; });
+  if(i===q[3]){ const pts=20+(recog.hint?0:10); recog.score+=pts; $('#rexp').innerHTML='<b style="color:var(--ok)">+'+pts+'</b> · '+esc(q[4]); }
+  else $('#rexp').innerHTML='<b style="color:var(--red)">Ні.</b> '+esc(q[4]);
+  if(!recog.hint) $('#rh').textContent=q[1];
+  $('#rnext').innerHTML='<button class="btn pri" id="rn">'+(recog.i<5?'Далі →':'Результат')+'</button>';
+  $('#rn').onclick=()=>{ recog.i++; if(recog.i<6) recogQ(); else recogEnd(); };
+}
+function recogEnd(){
+  const best=recog.score>(prog.recog||0); if(best){ prog.recog=recog.score; saveProg(); }
+  $('#recog').innerHTML='<p class="eyebrow">Гру завершено</p><h2 style="font-size:40px;color:var(--sig)">'+recog.score+' з 180</h2><p style="margin:0;color:var(--dim)">'+(best?'Новий рекорд!':'Рекорд: '+prog.recog)+'</p><div><button class="btn pri" id="rgo">Ще раз</button></div>';
+  $('#rgo').onclick=recogStart;
+}
+
+/* ===================== БЛІЦ ===================== */
+const QS=[
+ ['Чому сусідні гвинти квадрокоптера обертаються в протилежні боки?',['Щоб компенсувати реактивний момент і не крутити корпус','Щоб дрон летів швидше','Щоб зменшити шум','Так просто дешевше виробляти'],0,'Якби всі гвинти крутились в один бік, корпус закрутило б у протилежний. Різниця між парами дає рискання.'],
+ ['Що перетворює команду польотного контролера на струм для мотора?',['Приймач RC','Регулятор ESC','Модуль GNSS','Барометр'],1,'ESC — Electronic Speed Controller, регулятор обертів.'],
+ ['Батарея 4000 мА·год, середній струм 16 А, резерв 20 %. Скільки хвилин польоту?',['20 хв','15 хв','12 хв','9 хв'],2,'4 А·год × 0,8 / 16 А = 0,2 год = 12 хв.'],
+ ['Який режим повертає дрон на точку старту й саджає його?',['Loiter','Stabilize','AltHold','RTL'],3,'RTL — Return To Launch.'],
+ ['Яка складова PID прибирає сталу похибку, наприклад від вантажу?',['P','I','D','Жодна'],1,'Інтегральна складова накопичує похибку в часі й «дотискає» до цілі.'],
+ ['Який датчик реагує найшвидше, але його похибка накопичується?',['IMU (гіроскоп + акселерометр)','GNSS','Барометр','Лідар'],0,'IMU працює сотні разів на секунду, але без корекції дрейфує.'],
+ ['Що таке спуфінг GNSS?',['Повне глушіння сигналу','Підміна сигналу фальшивими координатами','Перегрів приймача','Оновлення прошивки'],1,'При спуфінгу дрон «впевнено» вважає, що він в іншому місці.'],
+ ['Що робить фільтр EKF в автопілоті?',['Стискає відео','Поєднує дані різних датчиків в одну оцінку стану','Шифрує зв’язок','Керує камерою'],1,'Розширений фільтр Калмана зважує датчики за їхньою надійністю.'],
+ ['Який патерн найкраще підходить для картографування поля?',['Орбіта','Коридор','«Газонокосарка»','Одна точка'],2,'Паралельні смуги з перекриттям знімків покривають усю площу.'],
+ ['MAVLink — це…',['Модель мотора','Протокол обміну повідомленнями між дроном і наземною станцією','Тип батареї','Режим польоту'],1,'Його використовують ArduPilot, PX4, Mission Planner, QGroundControl.'],
+ ['Що зазвичай робить автопілот при втраті зв’язку з пультом?',['Вимикає мотори','Летить далі за маршрутом назавжди','Через кілька секунд вмикає RTL','Набирає максимальну висоту'],2,'Типовий failsafe — повернення додому.'],
+ ['Чого «боїться» магнітометр?',['Вологи','Заліза і сильних струмів поруч','Сонячного світла','Низької температури'],1,'Тому GNSS-компас виносять на щоглу подалі від проводів живлення.'],
+ ['SITL — це…',['Справжня прошивка, що працює в симуляції на комп’ютері','Тип пропелера','Режим зйомки','Назва дрона'],0,'Software In The Loop: перевірка місії без ризику для дрона.'],
+ ['Чи можна цивільному запустити дрон у місті під час воєнного стану без дозволу?',['Так, якщо дрон легший за 250 г','Ні, повітряний простір закритий, потрібен дозвіл','Так, удень','Так, якщо не вище 50 м'],1,'Повітряний простір закритий з 24.02.2022, тож будь-який цивільний політ потребує дозволу.'],
+ ['Ви знайшли уламки дрона, що впав. Що робити?',['Сфотографувати зблизька й викласти в мережу','Забрати деталь на пам’ять','Не торкатися, відійти й повідомити 101 або 102','Віднести в поліцію самостійно'],2,'Уламки можуть містити вибухові речовини. Правило як у мінній безпеці: не торкатися, відійти, повідомити.'],
+ ['Чому не можна публікувати відео роботи ППО та наслідків ударів?',['Бо це нецікаво','Ворог використовує такі кадри, щоб коригувати атаки','Через авторські права','Через погану якість відео'],1,'Геолокація кадрів підказує ворогу, куди влучили і де стоїть захист.'],
+ ['Як дрони допомагають гуманітарному розмінуванню?',['Підривають міни з повітря','Обстежують і картографують території без ризику для людей','Замінюють саперів повністю','Ніяк'],1,'Зйомка показує саперам, де працювати насамперед. Знешкоджують міни фахівці.'],
+ ['Що таке баражуючий боєприпас?',['Дрон, що кружляє над районом і сам обирає момент атаки','Морський дрон','Дрон-розвідник без камери','Повітряна куля'],0,'Він може довго «баражувати» над районом, а потім атакувати ціль.'],
+ ['Сили безпілотних систем — це…',['Цивільна компанія-виробник','Окремий рід сил ЗСУ','Відділ ДСНС','Міжнародна організація'],1,'Україна виокремила безпілотні системи в самостійний рід сил ЗСУ.'],
+ ['Що спільного між бойовим і цивільним квадрокоптером?',['Нічого','Та сама будова: рама, мотори, ESC, польотний контролер','Лише колір','Тільки батарея'],1,'Відрізняються задача, зв’язок і навантаження, а основа однакова.'],
+ ['Що збільшує Kd у PID-регуляторі, якщо датчик «шумить»?',['Точність','Тремтіння моторів','Час польоту','Дальність зв’язку'],1,'Похідна підсилює швидкі зміни, а шум — це саме швидкі зміни.']
+];
+const quiz={started:false};
+function quizIntro(){
+  $('#quiz').innerHTML='<p class="eyebrow">Гра · Бліц</p><h2 style="font-size:28px">10 питань, 15 секунд на кожне</h2><p style="margin:0;color:var(--dim);line-height:1.5">Правильна відповідь — 10 балів плюс бонус за швидкість. Серія правильних відповідей подвоює бонус. Рекорд: <b style="color:var(--sig)">'+(prog.quiz||0)+'</b></p><div><button class="btn pri" id="qgo">Почати бліц</button></div>';
+  $('#qgo').onclick=quizStart;
+}
+function quizStart(){ quiz.started=true; quiz.list=QS.map((q,i)=>i).sort(()=>Math.random()-0.5).slice(0,10); quiz.i=0; quiz.score=0; quiz.streak=0; quizQ(); }
+function quizQ(){
+  const q=QS[quiz.list[quiz.i]]; quiz.lock=false; quiz.t0=performance.now();
+  $('#quiz').innerHTML='<div class="qhead"><span>ПИТАННЯ '+(quiz.i+1)+' / 10</span><span>СЕРІЯ ×'+quiz.streak+'</span><span>БАЛИ <b style="color:var(--sig)">'+quiz.score+'</b></span></div><div class="qtimer"><i id="qt"></i></div><h2 style="font-size:24px;line-height:1.3">'+esc(q[0])+'</h2><div class="qopts">'+q[1].map((o,i)=>'<button class="qopt" data-i="'+i+'">'+esc(o)+'</button>').join('')+'</div><p class="qexp" id="qexp"></p><div id="qnext"></div>';
+  document.querySelectorAll('.qopt').forEach(b=>b.onclick=()=>quizAns(+b.dataset.i));
+  cancelAnimationFrame(quiz.raf); const tick=()=>{ const el=$('#qt'); if(!el) return; const p=1-(performance.now()-quiz.t0)/15000; el.style.width=Math.max(0,p*100)+'%'; if(p<=0&&!quiz.lock){ quizAns(-1); return; } if(!quiz.lock) quiz.raf=requestAnimationFrame(tick); }; quiz.raf=requestAnimationFrame(tick);
+}
+function quizAns(i){
+  if(quiz.lock) return; quiz.lock=true; const q=QS[quiz.list[quiz.i]]; const left=Math.max(0,15-(performance.now()-quiz.t0)/1000);
+  document.querySelectorAll('.qopt').forEach((b,k)=>{ if(k===q[2]) b.classList.add('ok'); else if(k===i) b.classList.add('no'); b.disabled=true; });
+  if(i===q[2]){ quiz.streak++; const pts=10+Math.round(left)*(quiz.streak>=3?2:1); quiz.score+=pts; $('#qexp').innerHTML='<b style="color:var(--ok)">+'+pts+'</b> · '+esc(q[3]); }
+  else { quiz.streak=0; $('#qexp').innerHTML='<b style="color:var(--red)">'+(i<0?'Час вийшов.':'Неправильно.')+'</b> '+esc(q[3]); }
+  $('#qnext').innerHTML='<button class="btn pri" id="qn">'+(quiz.i<9?'Далі →':'Результат')+'</button>'; $('#qn').onclick=()=>{ quiz.i++; if(quiz.i<10) quizQ(); else quizEnd(); };
+}
+function quizEnd(){
+  const best=quiz.score>(prog.quiz||0); if(best){ prog.quiz=quiz.score; saveProg(); }
+  $('#quiz').innerHTML='<p class="eyebrow">Бліц завершено</p><h2 style="font-size:40px;color:var(--sig)">'+quiz.score+' балів</h2><p style="margin:0;color:var(--dim)">'+(best?'Новий рекорд!':'Рекорд: '+prog.quiz)+'</p><div><button class="btn pri" id="qgo">Ще раз</button></div>';
+  $('#qgo').onclick=quizStart;
+}
+
+/* ===================== ДОВІДКА І ЗВІТ ===================== */
+$('#reftab').innerHTML=API_DOC.map(r=>'<tr><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td></tr>').join('');
+$('#repBtn').onclick=()=>{
+  const lines=['ДронЛаб — звіт пілота','Позивний: '+(pilot.value||'—'),'Дата: '+new Date().toLocaleString('uk-UA'),'Всього: '+xpTotal()+' XP ('+$('#rank').textContent+')','','Місії коду:'];
+  LEVELS.forEach((L,i)=>{ const p=prog.levels[L.id]||{}; lines.push('  '+(i+1)+'. '+L.title+': '+'★'.repeat(p.stars||0)+'☆'.repeat(3-(p.stars||0))+' (спроб: '+(p.tries||0)+')'); });
+  lines.push('','PID-лабораторія:'); CHAL.forEach(c=>{ const p=prog.pid[c.id]; lines.push('  '+c.name+': '+(p?'✓ Kp '+p.kp+', Ki '+p.ki+', Kd '+p.kd:'—')); });
+  lines.push('','Збери дрон: '+(prog.build||0)+' балів','Розпізнай БпЛА: '+(prog.recog||0)+' балів','Бліц: '+(prog.quiz||0)+' балів');
+  const txt=lines.join('\n');
+  openModal('<p class="eyebrow">Звіт для викладача</p><h2 style="font-size:22px">'+esc(pilot.value||'Пілот без позивного')+'</h2><textarea class="report" readonly>'+esc(txt)+'</textarea><div class="mrow"><button class="btn" data-a="reset" style="margin-right:auto">Скинути прогрес</button><button class="btn" data-a="close">Закрити</button><button class="btn pri" data-a="copy">Копіювати</button></div>',{
+    copy:()=>{ navigator.clipboard&&navigator.clipboard.writeText(txt).then(()=>toast('Звіт скопійовано'),()=>toast('Не вдалося скопіювати — виділіть текст вручну')); },
+    reset:()=>confirmBox('Стерти весь прогрес на цьому пристрої?',()=>{ prog.levels={}; prog.pid={}; prog.build=0; prog.quiz=0; prog.recog=0; saveProg(); renderList(); renderChal(); toast('Прогрес скинуто'); })
+  });
+};
+
+/* старт */
+renderXP(); renderChal(); selectLevel(0); buildStart(); pidUpdate(false);
+</script>
+</body>
+</html>
